@@ -1,19 +1,19 @@
 """OpenSeadragon configuration detection and parsing for JSP pages."""
 
-import re
 import json
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+import re
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
-import requests
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 logger = logging.getLogger(__name__)
 
@@ -32,33 +32,30 @@ class OpenSeadragonConfig:
         for source in self.tile_sources:
             if isinstance(source, str):
                 # Simple URL string
-                self._parsed_sources.append({
-                    'url': source,
-                    'type': 'simple',
-                    'max_level': None
-                })
+                self._parsed_sources.append({"url": source, "type": "simple", "max_level": None})
             elif isinstance(source, dict):
                 # DZI or custom format
                 parsed = {
-                    'url': source.get('url', source.get('Image', {}).get('Url', '')),
-                    'type': 'dzi' if 'Image' in source else 'custom',
-                    'max_level': None,
-                    'tile_size': source.get('Image', {}).get('TileSize', 256),
-                    'overlap': source.get('Image', {}).get('Overlap', 0),
-                    'format': source.get('Image', {}).get('Format', 'jpg')
+                    "url": source.get("url", source.get("Image", {}).get("Url", "")),
+                    "type": "dzi" if "Image" in source else "custom",
+                    "max_level": None,
+                    "tile_size": source.get("Image", {}).get("TileSize", 256),
+                    "overlap": source.get("Image", {}).get("Overlap", 0),
+                    "format": source.get("Image", {}).get("Format", "jpg"),
                 }
 
                 # Extract max level if available
-                if 'Image' in source and 'Size' in source['Image']:
-                    size = source['Image']['Size']
-                    width = int(size.get('Width', 0))
-                    height = int(size.get('Height', 0))
+                if "Image" in source and "Size" in source["Image"]:
+                    size = source["Image"]["Size"]
+                    width = int(size.get("Width", 0))
+                    height = int(size.get("Height", 0))
                     if width and height:
                         import math
+
                         max_dim = max(width, height)
-                        parsed['max_level'] = math.ceil(math.log2(max_dim))
-                        parsed['width'] = width
-                        parsed['height'] = height
+                        parsed["max_level"] = math.ceil(math.log2(max_dim))
+                        parsed["width"] = width
+                        parsed["height"] = height
 
                 self._parsed_sources.append(parsed)
 
@@ -74,9 +71,9 @@ class OpenSeadragonConfig:
         tile_urls = []
 
         for source in self._parsed_sources:
-            if source['type'] == 'simple':
+            if source["type"] == "simple":
                 # For simple URLs, we need to discover the pattern
-                base_url = source['url']
+                base_url = source["url"]
                 if level is None:
                     # Try to find highest level
                     for test_level in range(15, -1, -1):
@@ -92,19 +89,19 @@ class OpenSeadragonConfig:
                     for row in range(10):  # Simplified - would need actual grid size
                         for col in range(10):
                             # Ensure proper URL joining without double slashes
-                            if base_url.endswith('/'):
+                            if base_url.endswith("/"):
                                 url = f"{base_url}{level}/{col}_{row}.jpg"
                             else:
                                 url = f"{base_url}/{level}/{col}_{row}.jpg"
                             tile_urls.append((url, col, row))
 
-            elif source['type'] == 'dzi':
+            elif source["type"] == "dzi":
                 # Handle DZI format
                 if level is None:
-                    level = source.get('max_level', 13)
+                    level = source.get("max_level", 13)
 
                 # DZI URL pattern
-                base_url = source['url'].replace('.dzi', '_files')
+                base_url = source["url"].replace(".dzi", "_files")
                 for row in range(10):  # Simplified
                     for col in range(10):
                         url = f"{base_url}/{level}/{col}_{row}.{source['format']}"
@@ -168,9 +165,7 @@ class OpenSeadragonDetector:
 
             # Strategy 1: Look for OpenSeadragon viewer element
             try:
-                wait.until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "openseadragon-canvas"))
-                )
+                wait.until(EC.presence_of_element_located((By.CLASS_NAME, "openseadragon-canvas")))
                 logger.info("Found OpenSeadragon canvas element")
             except TimeoutException:
                 logger.debug("No OpenSeadragon canvas found")
@@ -178,7 +173,8 @@ class OpenSeadragonDetector:
             # Strategy 2: Execute JavaScript to get OpenSeadragon instances
             try:
                 # Check for global OpenSeadragon variable
-                osd_data = driver.execute_script("""
+                osd_data = driver.execute_script(
+                    """
                     if (typeof OpenSeadragon !== 'undefined' && window.viewer) {
                         var tileSources = [];
                         if (window.viewer.tileSources) {
@@ -192,10 +188,11 @@ class OpenSeadragonDetector:
                         };
                     }
                     return {found: false};
-                """)
+                """
+                )
 
-                if osd_data.get('found'):
-                    tile_sources = osd_data.get('tileSources', [])
+                if osd_data.get("found"):
+                    tile_sources = osd_data.get("tileSources", [])
                     logger.info(f"Found {len(tile_sources)} tile sources via JavaScript")
             except Exception as e:
                 logger.debug(f"JavaScript extraction failed: {e}")
@@ -221,9 +218,7 @@ class OpenSeadragonDetector:
     def _detect_with_requests(self, url: str) -> Optional[OpenSeadragonConfig]:
         """Detect configuration using requests (for static content)."""
         try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
 
@@ -241,62 +236,47 @@ class OpenSeadragonDetector:
     def _extract_from_html(self, html: str, base_url: str) -> List[Dict[str, Any]]:
         """Extract tile sources from HTML content."""
         tile_sources = []
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, "html.parser")
 
         # Look for script tags containing OpenSeadragon configuration
-        for script in soup.find_all('script'):
+        for script in soup.find_all("script"):
             if not script.string:
                 continue
 
             text = script.string
 
             # Pattern 1: tileSources array
-            tile_sources_match = re.search(
-                r'tileSources\s*:\s*\[(.*?)\]', text, re.DOTALL
-            )
+            tile_sources_match = re.search(r"tileSources\s*:\s*\[(.*?)\]", text, re.DOTALL)
             if tile_sources_match:
                 try:
                     # Clean up JavaScript to make it valid JSON
                     sources_text = tile_sources_match.group(1)
-                    sources_text = re.sub(r'(\w+):', r'"\1":', sources_text)
+                    sources_text = re.sub(r"(\w+):", r'"\1":', sources_text)
                     sources_text = re.sub(r"'", '"', sources_text)
-                    sources_text = f'[{sources_text}]'
+                    sources_text = f"[{sources_text}]"
                     sources = json.loads(sources_text)
                     tile_sources.extend(sources)
                 except Exception:
                     pass
 
             # Pattern 2: Direct DZI URLs
-            dzi_urls = re.findall(
-                r'["\']([^"\']+\.dzi)["\']', text
-            )
+            dzi_urls = re.findall(r'["\']([^"\']+\.dzi)["\']', text)
             for dzi_url in dzi_urls:
                 full_url = urljoin(base_url, dzi_url)
-                tile_sources.append({
-                    'url': full_url,
-                    'type': 'dzi'
-                })
+                tile_sources.append({"url": full_url, "type": "dzi"})
 
             # Pattern 3: Tile URL patterns
-            tile_patterns = re.findall(
-                r'["\']([^"\']+/tiles/[^"\']+)["\']', text
-            )
+            tile_patterns = re.findall(r'["\']([^"\']+/tiles/[^"\']+)["\']', text)
             for pattern in tile_patterns:
                 full_url = urljoin(base_url, pattern)
-                tile_sources.append({
-                    'url': full_url,
-                    'type': 'tiles'
-                })
+                tile_sources.append({"url": full_url, "type": "tiles"})
 
         # Look for data attributes
-        for element in soup.find_all(attrs={'data-dzi': True}):
-            dzi_url = element.get('data-dzi')
+        for element in soup.find_all(attrs={"data-dzi": True}):
+            dzi_url = element.get("data-dzi")
             if dzi_url:
                 full_url = urljoin(base_url, dzi_url)
-                tile_sources.append({
-                    'url': full_url,
-                    'type': 'dzi'
-                })
+                tile_sources.append({"url": full_url, "type": "dzi"})
 
         return tile_sources
 
@@ -306,17 +286,16 @@ class OpenSeadragonDetector:
 
         try:
             # Get browser logs
-            logs = driver.get_log('performance')
+            logs = driver.get_log("performance")
             for log in logs:
-                message = json.loads(log['message'])
-                if 'Network.responseReceived' in message['message']['method']:
-                    response = message['message']['params']['response']
-                    url = response['url']
-                    if '.dzi' in url or '/tiles/' in url:
-                        tile_sources.append({
-                            'url': url,
-                            'type': 'dzi' if '.dzi' in url else 'tiles'
-                        })
+                message = json.loads(log["message"])
+                if "Network.responseReceived" in message["message"]["method"]:
+                    response = message["message"]["params"]["response"]
+                    url = response["url"]
+                    if ".dzi" in url or "/tiles/" in url:
+                        tile_sources.append(
+                            {"url": url, "type": "dzi" if ".dzi" in url else "tiles"}
+                        )
         except Exception:
             pass
 
@@ -326,14 +305,14 @@ class OpenSeadragonDetector:
         """Get or create Selenium WebDriver."""
         if self._driver is None:
             options = Options()
-            options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--window-size=1920,1080')
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1920,1080")
 
             # Enable performance logging for network requests
-            options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+            options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
             self._driver = webdriver.Chrome(options=options)
 

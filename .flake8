@@ -13,6 +13,7 @@ exclude =
     *.egg-info,
     .pytest_cache,
     .mypy_cache,
-    .ruff_cache
+    .ruff_cache,
+    .dev
 per-file-ignores =
     __init__.py:F401

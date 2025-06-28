@@ -1,16 +1,20 @@
 """Tests for the tile_manager module."""
 
-import pytest
 import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 import requests
 
-from src.tile_manager import (
-    TileManager, TileInfo, QualityMode, TileDownloadError,
-    SimpleProgressCallback
-)
 from src.openseadragon import OpenSeadragonConfig
+from src.tile_manager import (
+    QualityMode,
+    SimpleProgressCallback,
+    TileDownloadError,
+    TileInfo,
+    TileManager,
+)
 
 
 class TestTileInfo:
@@ -18,12 +22,7 @@ class TestTileInfo:
 
     def test_tile_info_creation(self):
         """Test creating TileInfo instance."""
-        tile = TileInfo(
-            url="https://example.com/tile.jpg",
-            col=5,
-            row=3,
-            level=10
-        )
+        tile = TileInfo(url="https://example.com/tile.jpg", col=5, row=3, level=10)
 
         assert tile.url == "https://example.com/tile.jpg"
         assert tile.col == 5
@@ -69,11 +68,7 @@ class TestTileManager:
         """Test TileManager initialization."""
         callback = Mock()
         manager = TileManager(
-            max_workers=3,
-            max_retries=5,
-            timeout=60,
-            chunk_size=4096,
-            progress_callback=callback
+            max_workers=3, max_retries=5, timeout=60, chunk_size=4096, progress_callback=callback
         )
 
         assert manager.max_workers == 3
@@ -88,23 +83,21 @@ class TestTileManager:
         session = manager._create_session()
 
         assert isinstance(session, requests.Session)
-        assert 'User-Agent' in session.headers
+        assert "User-Agent" in session.headers
         # Check that adapters are configured
-        assert 'https://' in session.adapters
-        assert 'http://' in session.adapters
+        assert "https://" in session.adapters
+        assert "http://" in session.adapters
 
     def test_download_tiles_invalid_params(self, manager, mock_config):
         """Test download_tiles with invalid parameters."""
         with pytest.raises(ValueError) as excinfo:
             manager.download_tiles(
-                mock_config,
-                quality_mode=QualityMode.SPECIFIC,
-                specific_level=None
+                mock_config, quality_mode=QualityMode.SPECIFIC, specific_level=None
             )
 
         assert "specific_level must be provided" in str(excinfo.value)
 
-    @patch('src.tile_manager.tempfile.mkdtemp')
+    @patch("src.tile_manager.tempfile.mkdtemp")
     def test_download_tiles_no_tiles(self, mock_mkdtemp, manager):
         """Test download_tiles when no tiles are found."""
         mock_mkdtemp.return_value = "/tmp/test_tiles"
@@ -116,11 +109,12 @@ class TestTileManager:
 
         assert "No tiles found" in str(excinfo.value)
 
-    @patch('src.tile_manager.tempfile.mkdtemp')
-    @patch.object(TileManager, '_download_tiles_concurrent')
-    @patch.object(TileManager, '_find_highest_level')
-    def test_download_tiles_success(self, mock_find_level, mock_download,
-                                    mock_mkdtemp, manager, mock_config):
+    @patch("src.tile_manager.tempfile.mkdtemp")
+    @patch.object(TileManager, "_download_tiles_concurrent")
+    @patch.object(TileManager, "_find_highest_level")
+    def test_download_tiles_success(
+        self, mock_find_level, mock_download, mock_mkdtemp, manager, mock_config
+    ):
         """Test successful tile download."""
         temp_dir = "/tmp/test_tiles"
         mock_mkdtemp.return_value = temp_dir
@@ -141,7 +135,7 @@ class TestTileManager:
     def test_find_highest_level(self, manager, mock_config):
         """Test finding highest zoom level."""
         # Mock HEAD requests
-        with patch.object(manager._session, 'head') as mock_head:
+        with patch.object(manager._session, "head") as mock_head:
             # Level 15 exists
             mock_response = Mock()
             mock_response.status_code = 200
@@ -173,34 +167,22 @@ class TestTileManager:
 
     def test_get_tiles_to_download_highest(self, manager, mock_config):
         """Test getting tiles for HIGHEST quality mode."""
-        with patch.object(manager, '_find_highest_level', return_value=10):
-            tiles = manager._get_tiles_to_download(
-                mock_config,
-                QualityMode.HIGHEST
-            )
+        with patch.object(manager, "_find_highest_level", return_value=10):
+            tiles = manager._get_tiles_to_download(mock_config, QualityMode.HIGHEST)
 
             assert len(tiles) == 4
             assert all(tile.level == 10 for tile in tiles)
 
     def test_get_tiles_to_download_specific(self, manager, mock_config):
         """Test getting tiles for SPECIFIC quality mode."""
-        tiles = manager._get_tiles_to_download(
-            mock_config,
-            QualityMode.SPECIFIC,
-            specific_level=5
-        )
+        tiles = manager._get_tiles_to_download(mock_config, QualityMode.SPECIFIC, specific_level=5)
 
         assert len(tiles) == 4
         assert all(tile.level == 5 for tile in tiles)
 
     def test_download_single_tile_success(self, manager, tmp_path):
         """Test successful single tile download."""
-        tile = TileInfo(
-            url="https://example.com/tile.jpg",
-            col=0,
-            row=0,
-            level=10
-        )
+        tile = TileInfo(url="https://example.com/tile.jpg", col=0, row=0, level=10)
 
         # Mock successful response
         mock_response = Mock()
@@ -208,7 +190,7 @@ class TestTileManager:
         mock_response.iter_content.return_value = [b"fake_image_data"]
         mock_response.raise_for_status.return_value = None
 
-        with patch.object(manager._session, 'get', return_value=mock_response):
+        with patch.object(manager._session, "get", return_value=mock_response):
             success = manager._download_single_tile(tile, tmp_path)
 
             assert success is True
@@ -218,12 +200,7 @@ class TestTileManager:
 
     def test_download_single_tile_retry(self, manager, tmp_path):
         """Test tile download with retry."""
-        tile = TileInfo(
-            url="https://example.com/tile.jpg",
-            col=0,
-            row=0,
-            level=10
-        )
+        tile = TileInfo(url="https://example.com/tile.jpg", col=0, row=0, level=10)
 
         # Mock failed then successful response
         mock_response_fail = Mock()
@@ -234,9 +211,7 @@ class TestTileManager:
         mock_response_success.iter_content.return_value = [b"fake_image_data"]
 
         with patch.object(
-            manager._session,
-            'get',
-            side_effect=[mock_response_fail, mock_response_success]
+            manager._session, "get", side_effect=[mock_response_fail, mock_response_success]
         ):
             success = manager._download_single_tile(tile, tmp_path)
 
@@ -244,18 +219,11 @@ class TestTileManager:
 
     def test_download_single_tile_failure(self, manager, tmp_path):
         """Test tile download failure after retries."""
-        tile = TileInfo(
-            url="https://example.com/tile.jpg",
-            col=0,
-            row=0,
-            level=10
-        )
+        tile = TileInfo(url="https://example.com/tile.jpg", col=0, row=0, level=10)
 
         # Mock all failed responses
         with patch.object(
-            manager._session,
-            'get',
-            side_effect=requests.ConnectionError("Network error")
+            manager._session, "get", side_effect=requests.ConnectionError("Network error")
         ):
             success = manager._download_single_tile(tile, tmp_path)
 
@@ -265,8 +233,7 @@ class TestTileManager:
     def test_download_tiles_concurrent(self, manager, tmp_path):
         """Test concurrent tile downloading."""
         tiles = [
-            TileInfo(url=f"https://example.com/{i}.jpg", col=i, row=0, level=10)
-            for i in range(4)
+            TileInfo(url=f"https://example.com/{i}.jpg", col=i, row=0, level=10) for i in range(4)
         ]
 
         # Create level directory
@@ -280,7 +247,7 @@ class TestTileManager:
             tile.path.touch()  # Create empty file
             return True
 
-        with patch.object(manager, '_download_single_tile', side_effect=mock_download):
+        with patch.object(manager, "_download_single_tile", side_effect=mock_download):
             manager._download_tiles_concurrent(tiles, tmp_path)
 
             assert all(tile.success for tile in tiles)
@@ -302,7 +269,7 @@ class TestTileManager:
 
     def test_cleanup(self, manager):
         """Test cleanup method."""
-        with patch.object(manager._session, 'close') as mock_close:
+        with patch.object(manager._session, "close") as mock_close:
             manager.cleanup()
             mock_close.assert_called_once()
 
@@ -355,9 +322,9 @@ class TestIntegration:
         mock_response.iter_content.return_value = [b"fake_image_data"]
         mock_response.raise_for_status.return_value = None
 
-        with patch.object(manager._session, 'get', return_value=mock_response):
-            with patch.object(manager._session, 'head', return_value=mock_response):
-                with patch.object(manager, '_find_highest_level', return_value=10):
+        with patch.object(manager._session, "get", return_value=mock_response):
+            with patch.object(manager._session, "head", return_value=mock_response):
+                with patch.object(manager, "_find_highest_level", return_value=10):
                     # Download tiles
                     temp_dir = manager.download_tiles(mock_config, QualityMode.HIGHEST)
 

@@ -16,8 +16,9 @@ install:
 	pip install -e .
 
 install-dev:
-	pip install -r dev-requirements.txt
+	pip install -r requirements-dev.txt
 	pip install -e .
+	pre-commit install
 
 test:
 	pytest

@@ -64,6 +64,32 @@ output/{url-path}/
 * **Documentation:** Write clear, concise docstrings in Google style for all public methods.
 * **Error Handling:** Explicitly handle errors and log meaningful messages.
 
+### Formatting and Linting
+
+**IMPORTANT:** This project uses automated formatting to prevent whitespace and style issues:
+
+* **Black:** Automatic code formatting (line length: 100)
+* **isort:** Import sorting
+* **flake8:** Linting with custom rules
+
+**Before committing code:**
+1. Run `black src tests` to format all Python files
+2. Run `isort src tests` to sort imports
+3. Run `flake8 src tests` to check for linting issues
+
+**Automated formatting:**
+* The project includes `.pre-commit-config.yaml` for automatic formatting
+* Install pre-commit hooks: `pre-commit install`
+* All formatting will be applied automatically on commit
+
+**Key formatting rules:**
+* No trailing whitespace
+* Files must end with a newline
+* Use LF line endings (not CRLF)
+* Follow PEP 8 with these exceptions:
+  - Line length: 100 characters (not 79)
+  - Allow line breaks before binary operators
+
 ## Testing Requirements
 
 * Write comprehensive unit tests for each module in the `tests/` directory.

@@ -1,7 +1,9 @@
 """Tests for the downloader module."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from src.downloader import download_image
 
 
@@ -11,9 +13,9 @@ class TestDownloadImage:
         url = "https://www.josephsmithpapers.org/paper-summary/test/1"
         output_dir = tmp_path / "output"
         output_dir.mkdir()
-        
+
         result = download_image(url, output_dir)
-        
+
         assert result is not None
         assert result.exists()
         assert result.name == "image.jpg"
