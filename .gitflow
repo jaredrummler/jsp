@@ -1,0 +1,60 @@
+# GitFlow Configuration for JSP Project
+
+## Branch Structure
+- **main**: Production-ready code (stable releases)
+- **develop**: Main development branch (default branch)
+- **feature/***: New features in development
+- **release/***: Release preparation branches
+- **hotfix/***: Emergency fixes for production
+- **support/***: Long-term support branches
+
+## Workflow
+
+### Starting a new feature
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+```
+
+### Finishing a feature
+```bash
+git checkout develop
+git merge --no-ff feature/your-feature-name
+git branch -d feature/your-feature-name
+git push origin develop
+```
+
+### Creating a release
+```bash
+git checkout develop
+git checkout -b release/1.0.0
+# Make release preparations
+git checkout main
+git merge --no-ff release/1.0.0
+git tag -a 1.0.0 -m "Release version 1.0.0"
+git checkout develop
+git merge --no-ff release/1.0.0
+```
+
+### Creating a hotfix
+```bash
+git checkout main
+git checkout -b hotfix/fix-description
+# Make the fix
+git checkout main
+git merge --no-ff hotfix/fix-description
+git tag -a 1.0.1 -m "Hotfix version 1.0.1"
+git checkout develop
+git merge --no-ff hotfix/fix-description
+```
+
+## Git Flow Configuration
+The following git config settings have been applied:
+- gitflow.branch.master: main
+- gitflow.branch.develop: develop
+- gitflow.prefix.feature: feature/
+- gitflow.prefix.release: release/
+- gitflow.prefix.hotfix: hotfix/
+- gitflow.prefix.support: support/
+- gitflow.prefix.versiontag: (empty)
