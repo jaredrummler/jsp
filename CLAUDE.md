@@ -104,6 +104,13 @@ output/{url-path}/
 * Avoid code duplication; reuse existing components wherever possible.
 * Maintain modularity and separation of concerns between CLI handling, scraping, and downloading logic.
 
+## Git Commit Guidelines
+
+* **NEVER include self-references in commit messages** (no "Generated with Claude Code", no "Co-Authored-By: Claude", etc.)
+* Write clear, concise commit messages that describe what was changed and why
+* Follow conventional commit format when appropriate
+* Focus on the technical changes and their purpose
+
 ## Licensing
 
 This project is licensed under the [MIT License](LICENSE).
