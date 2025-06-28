@@ -107,18 +107,21 @@ class TestOpenSeadragonDetector:
         detector = OpenSeadragonDetector(use_selenium=False)
         assert detector.use_selenium is False
 
+    @patch("src.openseadragon.ChromeDriverManager")
     @patch("src.openseadragon.webdriver.Chrome")
-    def test_get_driver(self, mock_chrome):
+    def test_get_driver(self, mock_chrome, mock_manager):
         """Test WebDriver creation."""
         detector = OpenSeadragonDetector()
         mock_driver = Mock()
         mock_chrome.return_value = mock_driver
+        mock_manager.return_value.install.return_value = "/path/to/chromedriver"
 
         driver = detector._get_driver()
 
         assert driver == mock_driver
         assert detector._driver == mock_driver
         mock_chrome.assert_called_once()
+        mock_manager.assert_called_once()
 
     def test_close(self):
         """Test closing the driver."""
@@ -162,14 +165,16 @@ class TestOpenSeadragonDetector:
         assert isinstance(config, OpenSeadragonConfig)
         assert config.tile_source_count > 0
 
+    @patch("src.openseadragon.ChromeDriverManager")
     @patch("src.openseadragon.webdriver.Chrome")
-    def test_detect_with_selenium(self, mock_chrome):
+    def test_detect_with_selenium(self, mock_chrome, mock_manager):
         """Test detection using Selenium."""
         detector = OpenSeadragonDetector(use_selenium=True)
 
         # Mock driver
         mock_driver = Mock()
         mock_chrome.return_value = mock_driver
+        mock_manager.return_value.install.return_value = "/path/to/chromedriver"
 
         # Mock page source with tile sources
         mock_driver.page_source = """
@@ -283,14 +288,16 @@ class TestOpenSeadragonDetector:
         assert sources[1]["url"] == "https://example.com/tiles/5/0_0.jpg"
         assert sources[1]["type"] == "tiles"
 
+    @patch("src.openseadragon.ChromeDriverManager")
     @patch("src.openseadragon.webdriver.Chrome")
-    def test_detect_with_selenium_timeout(self, mock_chrome):
+    def test_detect_with_selenium_timeout(self, mock_chrome, mock_manager):
         """Test detection with Selenium timeout."""
         detector = OpenSeadragonDetector(use_selenium=True)
 
         # Mock driver
         mock_driver = Mock()
         mock_chrome.return_value = mock_driver
+        mock_manager.return_value.install.return_value = "/path/to/chromedriver"
 
         # Mock timeout exception
         from selenium.common.exceptions import TimeoutException
