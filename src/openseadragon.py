@@ -11,9 +11,11 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +316,9 @@ class OpenSeadragonDetector:
             # Enable performance logging for network requests
             options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
-            self._driver = webdriver.Chrome(options=options)
+            # Use ChromeDriverManager to automatically manage driver version
+            service = Service(ChromeDriverManager().install())
+            self._driver = webdriver.Chrome(service=service, options=options)
 
         return self._driver
 
