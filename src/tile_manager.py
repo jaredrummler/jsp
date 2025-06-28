@@ -1,13 +1,14 @@
 """Tile download manager for OpenSeadragon images."""
 
 import logging
-import time
 import tempfile
-from enum import Enum
-from typing import Protocol, List, Optional
-from pathlib import Path
-from dataclasses import dataclass
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import List, Optional, Protocol
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -19,8 +20,9 @@ logger = logging.getLogger(__name__)
 
 class QualityMode(Enum):
     """Tile download quality modes."""
+
     HIGHEST = "highest"  # Download only highest quality tiles
-    ALL = "all"          # Download tiles from all zoom levels
+    ALL = "all"  # Download tiles from all zoom levels
     SPECIFIC = "specific"  # Download tiles from a specific level
 
 
@@ -43,6 +45,7 @@ class ProgressCallback(Protocol):
 @dataclass
 class TileInfo:
     """Information about a single tile."""
+
     url: str
     col: int
     row: int
@@ -55,18 +58,21 @@ class TileInfo:
 
 class TileDownloadError(Exception):
     """Base exception for tile download errors."""
+
     pass
 
 
 class TileManager:
     """Manages downloading tiles from OpenSeadragon sources."""
 
-    def __init__(self,
-                 max_workers: int = 5,
-                 max_retries: int = 3,
-                 timeout: int = 30,
-                 chunk_size: int = 8192,
-                 progress_callback: Optional[ProgressCallback] = None):
+    def __init__(
+        self,
+        max_workers: int = 5,
+        max_retries: int = 3,
+        timeout: int = 30,
+        chunk_size: int = 8192,
+        progress_callback: Optional[ProgressCallback] = None,
+    ):
         """Initialize TileManager.
 
         Args:
@@ -94,29 +100,31 @@ class TileManager:
             total=self.max_retries,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "HEAD"]
+            allowed_methods=["GET", "HEAD"],
         )
 
         adapter = HTTPAdapter(
             max_retries=retry_strategy,
             pool_connections=self.max_workers,
-            pool_maxsize=self.max_workers
+            pool_maxsize=self.max_workers,
         )
 
         session.mount("http://", adapter)
         session.mount("https://", adapter)
 
         # Set headers
-        session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (compatible; JSP-CLI/1.0; +https://github.com/jsp)'
-        })
+        session.headers.update(
+            {"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0; +https://github.com/jsp)"}
+        )
 
         return session
 
-    def download_tiles(self,
-                       config: OpenSeadragonConfig,
-                       quality_mode: QualityMode = QualityMode.HIGHEST,
-                       specific_level: Optional[int] = None) -> Path:
+    def download_tiles(
+        self,
+        config: OpenSeadragonConfig,
+        quality_mode: QualityMode = QualityMode.HIGHEST,
+        specific_level: Optional[int] = None,
+    ) -> Path:
         """Download tiles based on the specified quality mode.
 
         Args:
@@ -141,9 +149,7 @@ class TileManager:
 
         try:
             # Get tiles to download based on quality mode
-            tiles_to_download = self._get_tiles_to_download(
-                config, quality_mode, specific_level
-            )
+            tiles_to_download = self._get_tiles_to_download(config, quality_mode, specific_level)
 
             if not tiles_to_download:
                 raise TileDownloadError("No tiles found to download")
@@ -174,13 +180,16 @@ class TileManager:
         except Exception as e:
             # Clean up on error
             import shutil
+
             shutil.rmtree(temp_path, ignore_errors=True)
             raise TileDownloadError(f"Failed to download tiles: {e}")
 
-    def _get_tiles_to_download(self,
-                               config: OpenSeadragonConfig,
-                               quality_mode: QualityMode,
-                               specific_level: Optional[int] = None) -> List[TileInfo]:
+    def _get_tiles_to_download(
+        self,
+        config: OpenSeadragonConfig,
+        quality_mode: QualityMode,
+        specific_level: Optional[int] = None,
+    ) -> List[TileInfo]:
         """Get list of tiles to download based on quality mode."""
         tiles = []
 
@@ -223,26 +232,17 @@ class TileManager:
 
         return None
 
-    def _get_tiles_for_level(self,
-                             config: OpenSeadragonConfig,
-                             level: int) -> List[TileInfo]:
+    def _get_tiles_for_level(self, config: OpenSeadragonConfig, level: int) -> List[TileInfo]:
         """Get tile information for a specific zoom level."""
         tiles = []
         tile_urls = config.get_tile_urls(level=level)
 
         for url, col, row in tile_urls:
-            tiles.append(TileInfo(
-                url=url,
-                col=col,
-                row=row,
-                level=level
-            ))
+            tiles.append(TileInfo(url=url, col=col, row=row, level=level))
 
         return tiles
 
-    def _download_tiles_concurrent(self,
-                                   tiles: List[TileInfo],
-                                   output_dir: Path) -> None:
+    def _download_tiles_concurrent(self, tiles: List[TileInfo], output_dir: Path) -> None:
         """Download tiles concurrently."""
         self._tile_counter = 0
         self._failed_tiles = []
@@ -258,11 +258,7 @@ class TileManager:
 
             # Submit download tasks
             future_to_tile = {
-                executor.submit(
-                    self._download_single_tile,
-                    tile,
-                    level_dirs[tile.level]
-                ): tile
+                executor.submit(self._download_single_tile, tile, level_dirs[tile.level]): tile
                 for tile in tiles
             }
 
@@ -282,10 +278,7 @@ class TileManager:
                 finally:
                     self._tile_counter += 1
                     if self.progress_callback:
-                        self.progress_callback.on_tile_complete(
-                            self._tile_counter,
-                            tile.success
-                        )
+                        self.progress_callback.on_tile_complete(self._tile_counter, tile.success)
 
     def _download_single_tile(self, tile: TileInfo, output_dir: Path) -> bool:
         """Download a single tile with retry logic."""
@@ -302,19 +295,15 @@ class TileManager:
             try:
                 # Add delay between retries
                 if attempt > 0:
-                    delay = 2 ** attempt  # Exponential backoff
+                    delay = 2**attempt  # Exponential backoff
                     time.sleep(delay)
 
                 # Download tile
-                response = self._session.get(
-                    tile.url,
-                    stream=True,
-                    timeout=self.timeout
-                )
+                response = self._session.get(tile.url, stream=True, timeout=self.timeout)
                 response.raise_for_status()
 
                 # Save to file
-                with open(tile_path, 'wb') as f:
+                with open(tile_path, "wb") as f:
                     for chunk in response.iter_content(chunk_size=self.chunk_size):
                         if chunk:
                             f.write(chunk)

@@ -2,8 +2,11 @@
 
 import json
 from unittest.mock import Mock, patch
+
 from src.openseadragon import (
-    OpenSeadragonConfig, OpenSeadragonDetector, extract_openseadragon_config
+    OpenSeadragonConfig,
+    OpenSeadragonDetector,
+    extract_openseadragon_config,
 )
 
 
@@ -20,48 +23,44 @@ class TestOpenSeadragonConfig:
         assert config.has_tiles is True
         assert config.tile_source_count == 1
         assert len(config._parsed_sources) == 1
-        assert config._parsed_sources[0]['type'] == 'simple'
+        assert config._parsed_sources[0]["type"] == "simple"
 
     def test_init_with_dzi_format(self):
         """Test initialization with DZI format."""
-        tile_sources = [{
-            "Image": {
-                "Url": "https://example.com/image.dzi",
-                "Format": "jpg",
-                "TileSize": 256,
-                "Overlap": 1,
-                "Size": {
-                    "Width": 4096,
-                    "Height": 3072
+        tile_sources = [
+            {
+                "Image": {
+                    "Url": "https://example.com/image.dzi",
+                    "Format": "jpg",
+                    "TileSize": 256,
+                    "Overlap": 1,
+                    "Size": {"Width": 4096, "Height": 3072},
                 }
             }
-        }]
+        ]
         config = OpenSeadragonConfig(tile_sources, "https://example.com")
 
         assert config.has_tiles is True
         assert config.tile_source_count == 1
         parsed = config._parsed_sources[0]
-        assert parsed['type'] == 'dzi'
-        assert parsed['url'] == "https://example.com/image.dzi"
-        assert parsed['tile_size'] == 256
-        assert parsed['overlap'] == 1
-        assert parsed['format'] == 'jpg'
-        assert parsed['width'] == 4096
-        assert parsed['height'] == 3072
-        assert parsed['max_level'] == 12  # ceil(log2(4096))
+        assert parsed["type"] == "dzi"
+        assert parsed["url"] == "https://example.com/image.dzi"
+        assert parsed["tile_size"] == 256
+        assert parsed["overlap"] == 1
+        assert parsed["format"] == "jpg"
+        assert parsed["width"] == 4096
+        assert parsed["height"] == 3072
+        assert parsed["max_level"] == 12  # ceil(log2(4096))
 
     def test_init_with_custom_format(self):
         """Test initialization with custom format."""
-        tile_sources = [{
-            "url": "https://example.com/tiles/",
-            "maxLevel": 15
-        }]
+        tile_sources = [{"url": "https://example.com/tiles/", "maxLevel": 15}]
         config = OpenSeadragonConfig(tile_sources, "https://example.com")
 
         assert config.has_tiles is True
         parsed = config._parsed_sources[0]
-        assert parsed['type'] == 'custom'
-        assert parsed['url'] == "https://example.com/tiles/"
+        assert parsed["type"] == "custom"
+        assert parsed["url"] == "https://example.com/tiles/"
 
     def test_get_tile_urls_simple_format(self):
         """Test getting tile URLs for simple format."""
@@ -69,7 +68,7 @@ class TestOpenSeadragonConfig:
         config = OpenSeadragonConfig(tile_sources, "https://example.com")
 
         # Mock _url_exists to return True for level 5
-        with patch.object(config, '_url_exists', return_value=True):
+        with patch.object(config, "_url_exists", return_value=True):
             urls = config.get_tile_urls(level=5)
 
             assert len(urls) == 100  # 10x10 grid
@@ -78,12 +77,7 @@ class TestOpenSeadragonConfig:
 
     def test_get_tile_urls_dzi_format(self):
         """Test getting tile URLs for DZI format."""
-        tile_sources = [{
-            "Image": {
-                "Url": "https://example.com/image.dzi",
-                "Format": "jpg"
-            }
-        }]
+        tile_sources = [{"Image": {"Url": "https://example.com/image.dzi", "Format": "jpg"}}]
         config = OpenSeadragonConfig(tile_sources, "https://example.com")
 
         urls = config.get_tile_urls(level=10)
@@ -113,7 +107,7 @@ class TestOpenSeadragonDetector:
         detector = OpenSeadragonDetector(use_selenium=False)
         assert detector.use_selenium is False
 
-    @patch('src.openseadragon.webdriver.Chrome')
+    @patch("src.openseadragon.webdriver.Chrome")
     def test_get_driver(self, mock_chrome):
         """Test WebDriver creation."""
         detector = OpenSeadragonDetector()
@@ -139,26 +133,26 @@ class TestOpenSeadragonDetector:
 
     def test_context_manager(self):
         """Test using detector as context manager."""
-        with patch.object(OpenSeadragonDetector, 'close') as mock_close:
+        with patch.object(OpenSeadragonDetector, "close") as mock_close:
             with OpenSeadragonDetector() as detector:
                 assert isinstance(detector, OpenSeadragonDetector)
 
             mock_close.assert_called_once()
 
-    @patch('src.openseadragon.requests.get')
+    @patch("src.openseadragon.requests.get")
     def test_detect_with_requests(self, mock_get):
         """Test detection using requests."""
         detector = OpenSeadragonDetector(use_selenium=False)
 
         # Mock HTML response with DZI URL
         mock_response = Mock()
-        mock_response.text = '''
+        mock_response.text = """
         <html>
             <script>
                 var tileSources = ["https://example.com/image.dzi"];
             </script>
         </html>
-        '''
+        """
         mock_response.status_code = 200
         mock_get.return_value = mock_response
 
@@ -168,7 +162,7 @@ class TestOpenSeadragonDetector:
         assert isinstance(config, OpenSeadragonConfig)
         assert config.tile_source_count > 0
 
-    @patch('src.openseadragon.webdriver.Chrome')
+    @patch("src.openseadragon.webdriver.Chrome")
     def test_detect_with_selenium(self, mock_chrome):
         """Test detection using Selenium."""
         detector = OpenSeadragonDetector(use_selenium=True)
@@ -178,16 +172,16 @@ class TestOpenSeadragonDetector:
         mock_chrome.return_value = mock_driver
 
         # Mock page source with tile sources
-        mock_driver.page_source = '''
+        mock_driver.page_source = """
         <html>
             <div data-dzi="https://example.com/image.dzi"></div>
         </html>
-        '''
+        """
 
         # Mock JavaScript execution
         mock_driver.execute_script.return_value = {
-            'found': True,
-            'tileSources': ["https://example.com/image.dzi"]
+            "found": True,
+            "tileSources": ["https://example.com/image.dzi"],
         }
 
         config = detector.detect("https://example.com/page")
@@ -200,7 +194,7 @@ class TestOpenSeadragonDetector:
         """Test extracting tile sources from HTML."""
         detector = OpenSeadragonDetector()
 
-        html = '''
+        html = """
         <html>
             <script>
                 var viewer = OpenSeadragon({
@@ -211,46 +205,46 @@ class TestOpenSeadragonDetector:
                 });
             </script>
         </html>
-        '''
+        """
 
         sources = detector._extract_from_html(html, "https://example.com")
 
         assert len(sources) == 2
-        assert any(s['url'] == "https://example.com/image1.dzi" for s in sources)
-        assert any(s['url'] == "https://example.com/image2.dzi" for s in sources)
+        assert any(s["url"] == "https://example.com/image1.dzi" for s in sources)
+        assert any(s["url"] == "https://example.com/image2.dzi" for s in sources)
 
     def test_extract_from_html_data_attributes(self):
         """Test extracting from data attributes."""
         detector = OpenSeadragonDetector()
 
-        html = '''
+        html = """
         <html>
             <div data-dzi="https://example.com/image.dzi"></div>
         </html>
-        '''
+        """
 
         sources = detector._extract_from_html(html, "https://example.com")
 
         assert len(sources) == 1
-        assert sources[0]['url'] == "https://example.com/image.dzi"
-        assert sources[0]['type'] == 'dzi'
+        assert sources[0]["url"] == "https://example.com/image.dzi"
+        assert sources[0]["type"] == "dzi"
 
     def test_extract_from_html_relative_urls(self):
         """Test extracting relative URLs."""
         detector = OpenSeadragonDetector()
 
-        html = '''
+        html = """
         <html>
             <script>
                 var tileSources = ["/images/test.dzi"];
             </script>
         </html>
-        '''
+        """
 
         sources = detector._extract_from_html(html, "https://example.com/page")
 
         assert len(sources) == 1
-        assert sources[0]['url'] == "https://example.com/images/test.dzi"
+        assert sources[0]["url"] == "https://example.com/images/test.dzi"
 
     def test_find_dzi_urls_from_logs(self):
         """Test finding DZI URLs from browser logs."""
@@ -260,40 +254,36 @@ class TestOpenSeadragonDetector:
         # Mock performance logs
         mock_driver.get_log.return_value = [
             {
-                'message': json.dumps({
-                    'message': {
-                        'method': 'Network.responseReceived',
-                        'params': {
-                            'response': {
-                                'url': 'https://example.com/image.dzi'
-                            }
+                "message": json.dumps(
+                    {
+                        "message": {
+                            "method": "Network.responseReceived",
+                            "params": {"response": {"url": "https://example.com/image.dzi"}},
                         }
                     }
-                })
+                )
             },
             {
-                'message': json.dumps({
-                    'message': {
-                        'method': 'Network.responseReceived',
-                        'params': {
-                            'response': {
-                                'url': 'https://example.com/tiles/5/0_0.jpg'
-                            }
+                "message": json.dumps(
+                    {
+                        "message": {
+                            "method": "Network.responseReceived",
+                            "params": {"response": {"url": "https://example.com/tiles/5/0_0.jpg"}},
                         }
                     }
-                })
-            }
+                )
+            },
         ]
 
         sources = detector._find_dzi_urls(mock_driver)
 
         assert len(sources) == 2
-        assert sources[0]['url'] == 'https://example.com/image.dzi'
-        assert sources[0]['type'] == 'dzi'
-        assert sources[1]['url'] == 'https://example.com/tiles/5/0_0.jpg'
-        assert sources[1]['type'] == 'tiles'
+        assert sources[0]["url"] == "https://example.com/image.dzi"
+        assert sources[0]["type"] == "dzi"
+        assert sources[1]["url"] == "https://example.com/tiles/5/0_0.jpg"
+        assert sources[1]["type"] == "tiles"
 
-    @patch('src.openseadragon.webdriver.Chrome')
+    @patch("src.openseadragon.webdriver.Chrome")
     def test_detect_with_selenium_timeout(self, mock_chrome):
         """Test detection with Selenium timeout."""
         detector = OpenSeadragonDetector(use_selenium=True)
@@ -304,13 +294,14 @@ class TestOpenSeadragonDetector:
 
         # Mock timeout exception
         from selenium.common.exceptions import TimeoutException
+
         mock_driver.get.side_effect = TimeoutException("Timeout")
 
         config = detector.detect("https://example.com/page")
 
         assert config is None
 
-    @patch('src.openseadragon.requests.get')
+    @patch("src.openseadragon.requests.get")
     def test_detect_with_requests_error(self, mock_get):
         """Test detection with requests error."""
         detector = OpenSeadragonDetector(use_selenium=False)
@@ -326,7 +317,7 @@ class TestOpenSeadragonDetector:
 class TestExtractOpenSeadragonConfig:
     """Test the convenience function."""
 
-    @patch('src.openseadragon.OpenSeadragonDetector')
+    @patch("src.openseadragon.OpenSeadragonDetector")
     def test_extract_function(self, mock_detector_class):
         """Test extract_openseadragon_config function."""
         # Mock detector instance

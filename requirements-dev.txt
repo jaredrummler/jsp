@@ -1,0 +1,28 @@
+# Development dependencies
+-r requirements.txt
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# Code formatting
+black>=23.12.0
+isort>=5.13.0
+flake8>=7.0.0
+flake8-docstrings>=1.7.0
+flake8-bugbear>=23.12.0
+flake8-comprehensions>=3.14.0
+
+# Type checking
+mypy>=1.7.0
+types-requests>=2.31.0
+types-beautifulsoup4>=4.12.0
+
+# Pre-commit
+pre-commit>=3.5.0
+
+# Documentation
+sphinx>=7.2.0
+sphinx-rtd-theme>=2.0.0
+sphinx-click>=5.0.0
