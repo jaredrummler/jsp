@@ -67,10 +67,21 @@ class TestOpenSeadragonConfig:
         tile_sources = ["https://example.com/tiles/"]
         config = OpenSeadragonConfig(tile_sources, "https://example.com")
 
-        # Mock _url_exists to return True for level 5
-        with patch.object(config, "_url_exists", return_value=True):
-            urls = config.get_tile_urls(level=5)
+        # Mock _url_exists to return True only for a 10x10 grid
+        def mock_url_exists(url):
+            # Extract row and column from URL
+            import re
 
+            match = re.search(r"/(\d+)/(\d+)_(\d+)\.jpg$", url)
+            if match:
+                level = match.group(1)
+                col, row = int(match.group(2)), int(match.group(3))
+                # Only return True for level 5 and within 10x10 grid
+                return level == "5" and col < 10 and row < 10
+            return False
+
+        with patch.object(config, "_url_exists", side_effect=mock_url_exists):
+            urls = config.get_tile_urls(level=5)
             assert len(urls) == 100  # 10x10 grid
             assert urls[0] == ("https://example.com/tiles/5/0_0.jpg", 0, 0)
             assert urls[-1] == ("https://example.com/tiles/5/9_9.jpg", 9, 9)
@@ -280,7 +291,7 @@ class TestOpenSeadragonDetector:
             },
         ]
 
-        sources = detector._find_dzi_urls(mock_driver)
+        sources, _ = detector._find_dzi_urls(mock_driver)
 
         assert len(sources) == 2
         assert sources[0]["url"] == "https://example.com/image.dzi"

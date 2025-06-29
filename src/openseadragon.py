@@ -44,7 +44,7 @@ class OpenSeadragonConfig:
                     source_type = "dzi"
                 else:
                     source_type = "custom"
-                    
+
                 parsed = {
                     "url": source.get("url", source.get("Image", {}).get("Url", "")),
                     "type": source_type,
@@ -96,7 +96,7 @@ class OpenSeadragonConfig:
                     # Determine grid size by probing
                     max_col = 0
                     max_row = 0
-                    
+
                     # Check columns at row 0
                     for col in range(50):  # Reasonable upper limit
                         test_url = f"{base_url}{level}/{col}_0.jpg"
@@ -104,7 +104,7 @@ class OpenSeadragonConfig:
                             max_col = col
                         else:
                             break
-                    
+
                     # Check rows at column 0
                     for row in range(50):  # Reasonable upper limit
                         test_url = f"{base_url}{level}/0_{row}.jpg"
@@ -112,13 +112,13 @@ class OpenSeadragonConfig:
                             max_row = row
                         else:
                             break
-                    
+
                     # Generate all tile URLs
                     for row in range(max_row + 1):
                         for col in range(max_col + 1):
                             url = f"{base_url}{level}/{col}_{row}.jpg"
                             tile_urls.append((url, col, row))
-                    
+
                     logger.info(f"Found grid size: {max_col + 1}x{max_row + 1} at level {level}")
 
             elif source["type"] == "dzi":
@@ -128,21 +128,21 @@ class OpenSeadragonConfig:
 
                 # DZI URL pattern
                 base_url = source["url"].replace(".dzi", "_files")
-                
+
                 # For DZI, we should calculate grid size based on dimensions
                 if "width" in source and "height" in source:
                     tile_size = source.get("tile_size", 256)
                     width = source["width"]
                     height = source["height"]
-                    
+
                     # Calculate tiles needed at this level
                     level_scale = 2 ** (source.get("max_level", level) - level)
                     level_width = width // level_scale
                     level_height = height // level_scale
-                    
+
                     cols = (level_width + tile_size - 1) // tile_size
                     rows = (level_height + tile_size - 1) // tile_size
-                    
+
                     for row in range(rows):
                         for col in range(cols):
                             url = f"{base_url}/{level}/{col}_{row}.{source.get('format', 'jpg')}"
@@ -209,7 +209,7 @@ class OpenSeadragonDetector:
 
             # Try multiple strategies to find OpenSeadragon
             tile_sources = []
-            
+
             # Store performance logs once for reuse
             performance_logs = None
 
@@ -266,14 +266,17 @@ class OpenSeadragonDetector:
                         logger.info(f"Found {len(iframes)} iframe(s)")
                         # Switch to first iframe
                         driver.switch_to.frame(iframes[0])
-                        
+
                         # Wait for content to load
                         import time
+
                         time.sleep(5)
-                        
+
                         # Check for OpenSeadragon in iframe
-                        iframe_osd = driver.execute_script("""
-                            if (typeof OpenSeadragon !== 'undefined' && typeof viewer !== 'undefined' && viewer.world) {
+                        iframe_osd = driver.execute_script(
+                            """
+                            if (typeof OpenSeadragon !== 'undefined' &&
+                                typeof viewer !== 'undefined' && viewer.world) {
                                 var sources = [];
                                 var count = viewer.world.getItemCount();
                                 for (var i = 0; i < count; i++) {
@@ -289,30 +292,32 @@ class OpenSeadragonDetector:
                                 return sources;
                             }
                             return null;
-                        """)
-                        
+                        """
+                        )
+
                         if iframe_osd:
-                            logger.info(f"Found OpenSeadragon in iframe with {len(iframe_osd)} tile sources")
+                            logger.info(
+                                f"Found OpenSeadragon in iframe with {len(iframe_osd)} tile sources"
+                            )
                             # Extract base URL from sample tiles
                             for sample_url in iframe_osd:
-                                import re
-                                match = re.search(r'(.+_files)/\d+/\d+_\d+\.jpg', sample_url)
+                                match = re.search(r"(.+_files)/\d+/\d+_\d+\.jpg", sample_url)
                                 if match:
                                     base_url = match.group(1) + "/"
                                     tile_sources.append({"url": base_url, "type": "tiles"})
                                     logger.info(f"Extracted tile base URL: {base_url}")
-                        
+
                         # Switch back to main content
                         driver.switch_to.default_content()
-                        
+
                 except Exception as e:
                     logger.debug(f"Iframe detection failed: {e}")
                     # Make sure we're back in default content
                     try:
                         driver.switch_to.default_content()
-                    except:
+                    except Exception:
                         pass
-            
+
             # Strategy 6: Check network logs for tile patterns (JSP specific)
             if not tile_sources:
                 logger.info("Checking network logs for tile patterns...")
@@ -320,52 +325,59 @@ class OpenSeadragonDetector:
                     # If we don't have logs yet, get them after waiting for tiles to load
                     if performance_logs is None:
                         import time
+
                         # Wait longer for tiles to load
                         time.sleep(10)
                         performance_logs = driver.get_log("performance")
-                    
+
                     tile_base_urls = set()
-                    
+
                     # Debug: count total logs and image requests
                     total_logs = len(performance_logs)
                     image_requests = 0
-                    
+
                     for log in performance_logs:
                         try:
                             message = json.loads(log["message"])
                             method = message.get("message", {}).get("method", "")
-                            
+
                             if method == "Network.responseReceived":
                                 response = message["message"]["params"]["response"]
                                 request_url = response["url"]
-                                
+
                                 # Debug: log all image requests
                                 if any(ext in request_url for ext in [".jpg", ".jpeg", ".png"]):
                                     image_requests += 1
                                     if "_files/" in request_url:
                                         logger.debug(f"Found _files image: {request_url}")
-                                
+
                                 # Look for JSP tile patterns
-                                if "_files/" in request_url and ("/jsp/images/" in request_url or "/bc-jsp/" in request_url):
+                                if "_files/" in request_url and (
+                                    "/jsp/images/" in request_url or "/bc-jsp/" in request_url
+                                ):
                                     logger.info(f"Found matching tile URL: {request_url}")
                                     # Extract base URL from tile URL
-                                    # Example: .../4_ccla_001_files/10/0_1.jpg -> .../4_ccla_001_files/
+                                    # Extract: .../4_ccla_001_files/10/0_1.jpg ->
                                     import re
-                                    match = re.search(r'(.+_files)/\d+/\d+_\d+\.jpg', request_url)
+
+                                    match = re.search(r"(.+_files)/\d+/\d+_\d+\.jpg", request_url)
                                     if match:
                                         base_url = match.group(1) + "/"
                                         tile_base_urls.add(base_url)
                                         logger.info(f"Extracted base URL: {base_url}")
                         except Exception as log_error:
                             logger.debug(f"Error processing log entry: {log_error}")
-                    
-                    logger.info(f"Analyzed {total_logs} logs, found {image_requests} image requests, {len(tile_base_urls)} tile base URLs")
-                    
+
+                    logger.info(
+                        f"Analyzed {total_logs} logs, found {image_requests} image requests, "
+                        f"{len(tile_base_urls)} tile base URLs"
+                    )
+
                     # Convert found URLs to tile sources
                     for base_url in tile_base_urls:
                         logger.info(f"Adding tile source: {base_url}")
                         tile_sources.append({"url": base_url, "type": "tiles"})
-                        
+
                 except Exception as e:
                     logger.error(f"Network log analysis failed: {e}", exc_info=True)
 
@@ -445,7 +457,7 @@ class OpenSeadragonDetector:
 
     def _find_dzi_urls(self, driver, performance_logs=None) -> Tuple[List[Dict[str, Any]], List]:
         """Find DZI URLs from network requests.
-        
+
         Returns tuple of (tile_sources, performance_logs) to allow log reuse.
         """
         tile_sources = []
@@ -454,10 +466,10 @@ class OpenSeadragonDetector:
             # Get browser logs if not provided
             if performance_logs is None:
                 performance_logs = driver.get_log("performance")
-                
+
             for log in performance_logs:
                 message = json.loads(log["message"])
-                if "Network.responseReceived" in message["message"]["method"]:
+                if message["message"]["method"] == "Network.responseReceived":
                     response = message["message"]["params"]["response"]
                     url = response["url"]
                     if ".dzi" in url or "/tiles/" in url:
