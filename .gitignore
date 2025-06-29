@@ -209,3 +209,9 @@ __marimo__/
 # JSP specific
 output/
 .DS_Store
+
+# Development directory - large fixtures and experiments
+.dev/fixtures/*.html
+.dev/sandbox/*
+!.dev/sandbox/.gitkeep
+.dev/project-1/
