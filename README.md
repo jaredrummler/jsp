@@ -93,6 +93,15 @@ Contributions are welcome! Please read our [contributing guide](CONTRIBUTING.md)
 
 ---
 
+## 🤖 Agent Guidelines
+
+For guidance on using AI-driven coding assistants, see:
+
+- [AGENTS.md](AGENTS.md) for OpenAI-powered agents (Codex CLI / ChatGPT).
+- [CLAUDE.md](CLAUDE.md) for Anthropic’s Claude agent.
+
+---
+
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
