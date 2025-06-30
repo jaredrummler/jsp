@@ -7,7 +7,7 @@ This document provides examples of using the JSP command-line tool for various t
 ### Download and Extract Everything
 ```bash
 # Download image and extract content from a JSP page
-jsp https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
+jsp process https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
 ```
 
 ### Download Image Only
@@ -34,7 +34,7 @@ jsp scrape-content https://www.josephsmithpapers.org/paper-summary/letter-to-wil
 ```bash
 # Process multiple URLs from a file
 while read url; do
-  jsp "$url" -o "output/$(basename $url)"
+  jsp process "$url" -o "output/$(basename $url)"
 done < urls.txt
 ```
 
@@ -42,15 +42,36 @@ done < urls.txt
 ```bash
 # Download image with custom JPEG quality (default: 95)
 jsp download-image https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248 --quality 100
+
+# Use quality setting with full command
+jsp process https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248 --quality 100
 ```
 
 ### Verbose Output
 ```bash
 # Show detailed progress information
-jsp -v https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+jsp process -v https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 
 # Debug mode for troubleshooting
-jsp -vv https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+jsp process -vv https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+```
+
+### Dry Run Mode
+```bash
+# Preview what would be done without actually executing
+jsp process --dry-run https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+
+# Combine with verbose for more details
+jsp process --dry-run -v https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+```
+
+### Browser Control
+```bash
+# Disable browser automation for faster scraping (may miss some content)
+jsp scrape-content --no-browser https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+
+# Use with full command
+jsp process --no-browser https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 ```
 
 ## Output Examples
@@ -136,21 +157,22 @@ jsp scrape-content https://www.josephsmithpapers.org/paper-summary/journal-1835-
 
 ### Network Issues
 ```bash
-# Retry with longer timeout
-jsp --timeout 60 https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
+# Set longer timeout (default: 30 seconds)
+jsp process --timeout 60 https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
 
 # Use proxy if needed
 export HTTP_PROXY=http://proxy.example.com:8080
-jsp https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
+jsp process https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
 ```
 
 ### Missing Content
 ```bash
-# Force Selenium mode for dynamic content
-jsp scrape-content --use-selenium https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+# Browser mode is enabled by default. To disable it:
+jsp scrape-content --no-browser https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 
-# Skip image download if tiles are unavailable
-jsp --no-image https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+# If download fails, try individual commands
+jsp download-image https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+jsp scrape-content https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 ```
 
 ## Tips and Tricks
@@ -163,7 +185,11 @@ jsp --no-image https://www.josephsmithpapers.org/paper-summary/journal-1835-1836
 
 2. **Test with Dry Run**
    ```bash
-   jsp --dry-run https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
+   # Preview what would happen without executing
+   jsp process --dry-run https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
+   
+   # Dry run with verbose output
+   jsp process --dry-run -v https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
    ```
 
 3. **Use Configuration File**
@@ -171,9 +197,15 @@ jsp --no-image https://www.josephsmithpapers.org/paper-summary/journal-1835-1836
    # Create ~/.jsp/config.json
    {
      "output_dir": "~/Documents/JSP",
-     "image_quality": 95,
-     "use_selenium": true
+     "image_quality": 100,
+     "timeout": 30,
+     "use_browser": true,
+     "verbose": false,
+     "debug": false
    }
+   
+   # Use custom config file
+   jsp process --config /path/to/config.json https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
    ```
 
 4. **Monitor Progress**
