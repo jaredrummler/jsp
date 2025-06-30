@@ -15,7 +15,8 @@ from .utils import create_output_directory, parse_url
 @click.pass_context
 @click.argument("url", required=False)
 @click.option("--output", "-o", default="output", help="Output directory")
-def cli(ctx, url, output):
+@click.option("--no-browser", is_flag=True, help="Disable browser automation for transcription")
+def cli(ctx, url, output, no_browser):
     """JSP - Joseph Smith Papers CLI tool.
 
     Download high-resolution images and scrape content from josephsmithpapers.org
@@ -41,7 +42,8 @@ def cli(ctx, url, output):
 
         # Scrape content
         click.echo("Scraping webpage content...")
-        content_path = scrape_content(url, output_dir)
+        use_browser = not no_browser
+        content_path = scrape_content(url, output_dir, use_browser_for_transcription=use_browser)
         if content_path:
             click.echo(f"✓ Content saved to: {content_path}")
         else:
@@ -70,14 +72,16 @@ def download_image_cmd(url, output):
 @cli.command("scrape-content")
 @click.argument("url")
 @click.option("--output", "-o", default="output", help="Output directory")
-def scrape_content_cmd(url, output):
+@click.option("--no-browser", is_flag=True, help="Disable browser automation for transcription")
+def scrape_content_cmd(url, output, no_browser):
     """Scrape webpage content and save as Markdown."""
     output_dir = create_output_directory(url, output)
     click.echo(f"Scraping content from {url}...")
 
     from .scraper import scrape_content as do_scrape
 
-    content_path = do_scrape(url, output_dir)
+    use_browser = not no_browser
+    content_path = do_scrape(url, output_dir, use_browser_for_transcription=use_browser)
 
     if content_path:
         click.echo(f"✓ Content saved to: {content_path}")
