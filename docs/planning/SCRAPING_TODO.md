@@ -41,7 +41,7 @@ The Footnotes section appears as a separate drawer section (like Source Note) wi
 </details>
 ```
 
-## 2. Tables (MEDIUM PRIORITY)
+## 2. Tables (MEDIUM PRIORITY) ✅ COMPLETED
 
 **Found in:** 2 pages (Oliver Cowdery's Copy, Agreement with Isaac Hale)
 
@@ -96,11 +96,13 @@ Additional metadata classes found that might contain useful information:
    - Added to the sections list in scraper
 
 ### Phase 2 - Medium Priority
-2. **Add Table Extraction**
-   - Create `table_extractor.py`
-   - Detect and extract tables from content
-   - Convert to markdown table format
-   - Preserve table structure and alignment
+2. **Add Table Extraction** ✅ COMPLETED
+   - Created `table_extractor.py`
+   - Detects and extracts tables from content (including wysiwyg areas)
+   - Converts to markdown table format
+   - Preserves table structure and alignment
+   - Added Table, TableRow, and TableSection models
+   - Integrated into scraper and markdown generator
 
 3. **Enhance Editorial Marks Handling**
    - Update existing extractors to recognize editorial classes
