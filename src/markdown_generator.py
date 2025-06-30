@@ -5,14 +5,17 @@ from typing import Dict, List, Union
 
 try:
     from .models import (
+        CitationInfo,
         DocumentInformation,
         Footnote,
         FootnotesSection,
         HistoricalIntroduction,
         Link,
+        MetadataSection,
         Paragraph,
         Popup,
         PopupReference,
+        RepositoryInfo,
         Sentence,
         SourceNote,
         Table,
@@ -24,14 +27,17 @@ try:
     )
 except ImportError:
     from models import (
+        CitationInfo,
         DocumentInformation,
         Footnote,
         FootnotesSection,
         HistoricalIntroduction,
         Link,
+        MetadataSection,
         Paragraph,
         Popup,
         PopupReference,
+        RepositoryInfo,
         Sentence,
         SourceNote,
         Table,
@@ -368,6 +374,75 @@ def table_section_to_markdown(table_section: TableSection) -> str:
     return "\n".join(md_lines)
 
 
+def metadata_section_to_markdown(metadata_section: MetadataSection) -> str:
+    """Convert a MetadataSection object to markdown format.
+    
+    Args:
+        metadata_section: The MetadataSection object to convert
+        
+    Returns:
+        Markdown formatted string
+    """
+    md_lines = []
+    
+    # Add section title
+    md_lines.append(f"## {metadata_section.title}")
+    md_lines.append("")
+    
+    # Add citation information if available
+    if metadata_section.citation_info:
+        md_lines.append("### Citation Information")
+        md_lines.append("")
+        
+        if metadata_section.citation_info.chicago:
+            md_lines.append("**Chicago:**")
+            md_lines.append(f"> {metadata_section.citation_info.chicago}")
+            md_lines.append("")
+        
+        if metadata_section.citation_info.mla:
+            md_lines.append("**MLA:**")
+            md_lines.append(f"> {metadata_section.citation_info.mla}")
+            md_lines.append("")
+        
+        if metadata_section.citation_info.apa:
+            md_lines.append("**APA:**")
+            md_lines.append(f"> {metadata_section.citation_info.apa}")
+            md_lines.append("")
+    
+    # Add repository information if available
+    if metadata_section.repository_info:
+        md_lines.append("### Repository Information")
+        md_lines.append("")
+        
+        if metadata_section.repository_info.name:
+            md_lines.append(f"**Repository:** {metadata_section.repository_info.name}")
+        
+        if metadata_section.repository_info.collection:
+            md_lines.append(f"**Collection:** {metadata_section.repository_info.collection}")
+        
+        if metadata_section.repository_info.location:
+            md_lines.append(f"**Location:** {metadata_section.repository_info.location}")
+        
+        if metadata_section.repository_info.manuscript_number:
+            md_lines.append(f"**Manuscript Number:** {metadata_section.repository_info.manuscript_number}")
+        
+        md_lines.append("")
+    
+    # Add additional fields if available
+    if metadata_section.additional_fields:
+        md_lines.append("### Additional Metadata")
+        md_lines.append("")
+        
+        for key, value in metadata_section.additional_fields.items():
+            # Convert snake_case to Title Case
+            label = key.replace("_", " ").title()
+            md_lines.append(f"**{label}:** {value}")
+        
+        md_lines.append("")
+    
+    return "\n".join(md_lines).rstrip()
+
+
 def transcription_to_markdown(transcription: Transcription) -> str:
     """Convert a Transcription object to markdown format.
 
@@ -519,7 +594,7 @@ def generate_markdown_with_sections(
     breadcrumbs: List,
     title: str,
     content: str,
-    sections: List[Union[SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection]],
+    sections: List[Union[SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection, MetadataSection]],
 ) -> str:
     """Generate complete markdown with breadcrumbs, content, and sections.
 
@@ -575,6 +650,9 @@ def generate_markdown_with_sections(
             md_lines.append("")
         elif isinstance(section, TableSection):
             md_lines.append(table_section_to_markdown(section))
+            md_lines.append("")
+        elif isinstance(section, MetadataSection):
+            md_lines.append(metadata_section_to_markdown(section))
             md_lines.append("")
 
     return "\n".join(md_lines)

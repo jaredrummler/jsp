@@ -373,6 +373,16 @@ def extract_sections(soup: BeautifulSoup, url: str = None, use_browser_for_trans
     table_sections = extract_table_sections(soup)
     sections.extend(table_sections)
 
+    # Extract Metadata (citations, repository info, etc.)
+    try:
+        from .metadata_extractor import extract_metadata_section
+    except ImportError:
+        from metadata_extractor import extract_metadata_section
+    
+    metadata_section = extract_metadata_section(soup)
+    if metadata_section:
+        sections.append(metadata_section)
+
     # Add more section extractors here as needed
     # e.g., Related Documents, etc.
 
