@@ -93,7 +93,7 @@ def extract_transcription_paragraphs_from_html(html_content: str, preserve_line_
     # Convert collected footnotes to Footnote objects
     footnotes = []
     for fn_num, fn_text in sorted(collected_footnotes.items()):
-        footnotes.append(Footnote(id=fn_num, text=fn_text))
+        footnotes.append(Footnote(number=fn_num, text=fn_text))
     
     return paragraphs, footnotes
 
