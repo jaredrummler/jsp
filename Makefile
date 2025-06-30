@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-cov lint format clean build upload
+.PHONY: help install install-dev test test-cov lint format clean build upload upload-test
 
 help:
 	@echo "Available commands:"
@@ -10,6 +10,7 @@ help:
 	@echo "  make format       Format code with black and isort"
 	@echo "  make clean        Remove build artifacts"
 	@echo "  make build        Build distribution packages"
+	@echo "  make upload-test  Upload to TestPyPI (requires credentials)"
 	@echo "  make upload       Upload to PyPI (requires credentials)"
 
 install:
@@ -51,5 +52,8 @@ clean:
 build: clean
 	python -m build
 
+upload-test: build
+	python scripts/publish.py --test
+
 upload: build
-	python -m twine upload dist/*
+	python scripts/publish.py

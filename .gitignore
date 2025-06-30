@@ -191,8 +191,12 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
-# PyPI configuration file
+# PyPI configuration files and credentials
 .pypirc
+.pypirc.local
+.env
+.env.local
+.env.*.local
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
