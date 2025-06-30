@@ -7,7 +7,7 @@
   - Visit https://codecov.io and sign in with GitHub
   - Add the jsp repository
   - Copy the CODECOV_TOKEN to GitHub repository secrets
-- [ ] Update author information in setup.py and pyproject.toml
+- [x] Update author information in setup.py and pyproject.toml
 - [ ] Configure PyPI credentials for package publishing
 
 ### Documentation

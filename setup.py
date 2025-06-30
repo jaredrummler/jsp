@@ -11,8 +11,8 @@ long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists
 setup(
     name="jsp",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Jared Rummler",
+    author_email="jared@jaredrummler.com",
     description="CLI tool for downloading and scraping content from Joseph Smith Papers",
     long_description=long_description,
     long_description_content_type="text/markdown",
