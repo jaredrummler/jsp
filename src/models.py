@@ -123,24 +123,24 @@ class Footnote:
     """Represents a footnote in the document.
 
     Attributes:
-        id: The footnote number/ID
+        number: The footnote number
         text: The footnote text content
+        id: Optional HTML ID for linking
         links: Optional links within the footnote
-        html_id: Optional HTML ID for linking
     """
 
-    id: int
+    number: int
     text: str
+    id: Optional[str] = None
     links: List[Link] = field(default_factory=list)
-    html_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
-        result = {"id": self.id, "text": self.text}
+        result = {"number": self.number, "text": self.text}
+        if self.id:
+            result["id"] = self.id
         if self.links:
             result["links"] = [l.to_dict() for l in self.links]
-        if self.html_id:
-            result["html_id"] = self.html_id
         return result
 
 
@@ -321,6 +321,26 @@ class Transcription:
 
 
 @dataclass
+class FootnotesSection:
+    """Represents a Footnotes section containing all document footnotes.
+    
+    Attributes:
+        title: Section title (usually "Footnotes")
+        footnotes: List of footnotes in the section
+    """
+    
+    title: str
+    footnotes: List[Footnote]
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "title": self.title,
+            "footnotes": [f.to_dict() for f in self.footnotes]
+        }
+
+
+@dataclass
 class PageContent:
     """Represents scraped page content.
 
@@ -335,7 +355,7 @@ class PageContent:
     breadcrumbs: List[Breadcrumb]
     title: Optional[str] = None
     content: Optional[str] = None
-    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription]] = field(default_factory=list)
+    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection]] = field(default_factory=list)
     metadata: Optional[dict] = None
 
     def to_dict(self) -> dict:
