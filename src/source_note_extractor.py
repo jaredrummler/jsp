@@ -159,8 +159,8 @@ def parse_paragraph_content(para_elem: Tag) -> Paragraph:
                     links.append(Link(text=text, url=url))
                     link_elem.replace_with(f"[{text}]")
 
-        # Get the modified text
-        text = para_copy.get_text(strip=True)
+        # Get the modified text - use separator to preserve spaces between elements
+        text = para_copy.get_text(separator='', strip=False).strip()
 
         # Create sentence object
         if popup_refs or links or footnote_num is not None:
