@@ -12,7 +12,9 @@ from bs4 import BeautifulSoup
 try:
     from .models import (
         Breadcrumb,
+        DocumentInformation,
         Footnote,
+        HistoricalIntroduction,
         Link,
         PageContent,
         Paragraph,
@@ -25,7 +27,9 @@ try:
 except ImportError:
     from models import (
         Breadcrumb,
+        DocumentInformation,
         Footnote,
+        HistoricalIntroduction,
         Link,
         PageContent,
         Paragraph,
@@ -294,8 +298,28 @@ def extract_sections(soup: BeautifulSoup) -> List[Section]:
     if source_note:
         sections.append(source_note)
 
+    # Extract Historical Introduction
+    try:
+        from .historical_intro_extractor import extract_historical_introduction
+    except ImportError:
+        from historical_intro_extractor import extract_historical_introduction
+
+    historical_intro = extract_historical_introduction(soup)
+    if historical_intro:
+        sections.append(historical_intro)
+
+    # Extract Document Information
+    try:
+        from .document_info_extractor import extract_document_information
+    except ImportError:
+        from document_info_extractor import extract_document_information
+
+    doc_info = extract_document_information(soup)
+    if doc_info:
+        sections.append(doc_info)
+
     # Add more section extractors here as needed
-    # e.g., Historical Introduction, Related Documents, etc.
+    # e.g., Related Documents, etc.
 
     return sections
 
