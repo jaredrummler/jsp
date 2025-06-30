@@ -48,12 +48,51 @@ pytest tests                    # Run the complete test suite
   jsp scrape-content <URL>
   ```
 
+### Command Options
+
+* **Configuration file**: `--config CONFIG_FILE` - Use a JSON configuration file
+* **Custom timeout**: `--timeout SECONDS` - Set request timeout (default: 30)
+* **No browser mode**: `--no-browser` - Disable browser automation for faster scraping
+* **Output directory**: `-o, --output DIR` - Specify custom output directory
+* **Image quality**: `--quality N` - Set JPEG quality 1-100 (default: 100)
+* **Verbose mode**: `-v, --verbose` - Enable detailed output
+* **Debug mode**: `--debug` - Enable debug logging
+
 ## Output Structure
 
 ```
 output/{url-path}/
-├── image.jpg   # Stitched high-resolution image
-└── content.md  # Extracted webpage content in Markdown
+├── image.jpg     # Stitched high-resolution image
+├── content.md    # Extracted webpage content in Markdown
+└── content.json  # Structured data in JSON format
+```
+
+### Extracted Content Sections
+
+The content files include:
+- Document breadcrumbs and navigation
+- Main content
+- Source notes with footnotes
+- Historical introductions
+- Document information
+- Full transcription (with optional editing marks)
+- Footnotes section
+- Tables (if present)
+- Metadata (citations and repository info)
+
+## Configuration Files
+
+Create a `config.json` file to set default options:
+
+```json
+{
+  "output_dir": "output",
+  "image_quality": 100,
+  "timeout": 30,
+  "use_browser": true,
+  "verbose": false,
+  "debug": false
+}
 ```
 
 ## Code Style Guidelines
@@ -76,6 +115,7 @@ output/{url-path}/
 1. Run `black src tests` to format all Python files
 2. Run `isort src tests` to sort imports
 3. Run `flake8 src tests` to check for linting issues
+4. Run `mypy src` for type checking (optional but recommended)
 
 **Automated formatting:**
 * The project includes `.pre-commit-config.yaml` for automatic formatting

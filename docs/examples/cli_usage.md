@@ -43,8 +43,8 @@ done < urls.txt
 # Download image with custom JPEG quality (default: 95)
 jsp download-image https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248 --quality 100
 
-# Use quality setting with full command
-jsp process https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248 --quality 100
+# Use quality setting with download command
+jsp download-image https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248 --quality 100
 ```
 
 ### Verbose Output
@@ -53,7 +53,7 @@ jsp process https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/
 jsp process -v https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 
 # Debug mode for troubleshooting
-jsp process -vv https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+jsp process --debug https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
 ```
 
 ### Dry Run Mode
@@ -83,37 +83,68 @@ output/
     └── book-of-mormon-1830/
         └── 248/
             ├── image.jpg      # High-resolution stitched image
-            └── content.md     # Extracted content in Markdown
+            ├── content.md     # Extracted content in Markdown
+            └── content.json   # Structured data in JSON format
 ```
 
 ### Sample Markdown Output
 ```markdown
-# Book of Mormon, 1830
+*Navigation: [The Papers](https://www.josephsmithpapers.org/the-papers) > [Documents](https://www.josephsmithpapers.org/the-papers/documents) > [Documents, Volume 1: July 1828-June 1831](https://www.josephsmithpapers.org/the-papers/documents/jsp.documents-1) > Revelation, February 1829 [D&C 4]*
+
+# Revelation, February 1829 [D&C 4]
 
 ## Source Note
-The Book of Mormon was first published in March 1830 in Palmyra, New York...
+
+**Summary:** When Martin Harris lost the first 116 pages of the Book of Mormon manuscript in 1828, JS also lost the ability to translate...
+
+**Full Content:** When Martin Harris lost the first 116 pages of the Book of Mormon manuscript in 1828, JS also lost the ability to translate. He received a revelation...
+
+**Footnotes:**
+[1]. Knight, Joseph, Sr. Reminiscences, no date. CHL. MS 3470.
+[2]. Susquehanna Register, and Northern Pennsylvanian. Montrose, PA. 1831–1836.
+
+## Historical Introduction
+
+In February 1829, Joseph Smith's father traveled from Manchester, New York, to Harmony, Pennsylvania...
+
+The revelation begins by announcing a "marvelous work" that was "about to come forth." The work...
+
+**Footnotes:**
+[1]. See Isaiah 29:14.
+[2]. Knight, Joseph, Sr. Reminiscences, no date. CHL. MS 3470.
 
 ## Document Information
-**Editorial Title:** Book of Mormon, 1830
-**ID #:** 1234567
-**Total Pages:** 588
 
----
+| Label | Value |
+| --- | --- |
+| Source Note | Revelation Book 1, p. 3, handwriting of John Whitmer, circa Mar.–July 1831. |
+| Historical Introduction | As Joseph Smith's father traveled from Manchester, New York, to Harmony, Pennsylvania... |
+| Recipient | Joseph Smith Sr. |
+| Date | February 1829 |
 
 ## Transcription
 
-[Page 244]
+| Page | Content |
+| --- | --- |
+| [1] | A Revelation given to Joseph the father of Joseph the Seer in February 1829.[1]<br><br>Now[2] behold a marvilous work is about to come forth among the children of men,[3] therefore O ye that embark in the service of God, see that ye serve him with all your heart might mind and strength... |
 
-And now it came to pass that Alma returned from the land of Gideon...
+## Footnotes
 
-[1] This footnote provides additional context...
-[2] Another footnote with historical information...
+[1]. This heading likely named Joseph Smith Sr. as the recipient. It is unknown whether Partridge or someone else first created this heading.
+[2]. Missing text supplied from Revelation Book 1, p. 2.
+[3]. See Isaiah 29:14.
 
----
+## Metadata
 
-**Navigation:** [Previous Page](../247) | Page 244 of 588 | [Next Page](../249)
-**Source:** https://www.josephsmithpapers.org/paper-summary/book-of-mormon-1830/248
-**Extracted:** 2024-06-29 12:00:00
+### Citation Information
+
+**Chicago:**
+> Revelation, February 1829 [D&C 4], p. 1, The Joseph Smith Papers, accessed June 30, 2025, https://www.josephsmithpapers.org/paper-summary/revelation-february-1829-dc-4/1
+
+### Repository Information
+
+**Repository:** Church History Library
+**Manuscript Number:** MS 3470
 ```
 
 ## Common Use Cases
@@ -194,15 +225,15 @@ jsp scrape-content https://www.josephsmithpapers.org/paper-summary/journal-1835-
 
 3. **Use Configuration File**
    ```bash
-   # Create ~/.jsp/config.json
-   {
+   # Create config.json
+   echo '{
      "output_dir": "~/Documents/JSP",
      "image_quality": 100,
      "timeout": 30,
      "use_browser": true,
      "verbose": false,
      "debug": false
-   }
+   }' > config.json
    
    # Use custom config file
    jsp process --config /path/to/config.json https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
@@ -214,4 +245,54 @@ jsp scrape-content https://www.josephsmithpapers.org/paper-summary/journal-1835-
    watch -n 1 'ls -la output/'
    ```
 
-Last Updated: 2024-06-29
+## New Features
+
+### Configuration Files
+```bash
+# Use a configuration file for consistent settings
+jsp process --config my-config.json https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+
+# Config file example (my-config.json):
+{
+  "output_dir": "research/jsp",
+  "image_quality": 100,
+  "timeout": 60,
+  "use_browser": true,
+  "verbose": true
+}
+```
+
+### Clean Transcription Mode
+```bash
+# Get transcriptions without editing marks (clean text)
+jsp scrape-content --clean https://www.josephsmithpapers.org/paper-summary/journal-1835-1836/11
+```
+
+### Table Extraction
+Tables found in documents are automatically converted to markdown format:
+```markdown
+## Tables
+
+| Date | Event | Location |
+| --- | --- | --- |
+| April 6, 1830 | Church organized | Fayette, NY |
+| June 1830 | First conference | Colesville, NY |
+```
+
+### Citation Extraction
+Automatically extracts and formats citations:
+```markdown
+## Metadata
+
+### Citation Information
+
+**Chicago:**
+> Journal, 1835-1836, p. 11, The Joseph Smith Papers, accessed June 30, 2025, https://www.josephsmithpapers.org/...
+
+### Repository Information
+
+**Repository:** Church History Library
+**Manuscript Number:** MS 1234
+```
+
+Last Updated: 2025-06-30
