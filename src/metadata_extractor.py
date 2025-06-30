@@ -10,52 +10,70 @@ except ImportError:
     from models import CitationInfo, RepositoryInfo, MetadataSection
 
 
-def extract_citation_info(soup: BeautifulSoup) -> Optional[CitationInfo]:
+def extract_citation_info(soup: BeautifulSoup, url: str = None) -> Optional[CitationInfo]:
     """Extract citation information from the page."""
-    # Find the cite button
+    # Find the cite button to confirm citation is available
     cite_button = soup.find("a", {"data-testid": "docInfo-citePage-button"})
     if not cite_button:
         return None
     
-    # Look for the popup container
-    popup_container = cite_button.find_parent("div", class_=lambda x: x and "popup" in str(x).lower())
-    if not popup_container:
-        return None
-    
     citations = {}
     
-    # Look for citation formats
-    formats = ["Chicago", "MLA", "APA"]
+    # First, try to find citation in dialog elements (if present in initial HTML)
+    dialogs = soup.find_all("dialog")
+    for dialog in dialogs:
+        # Check if this is the citation dialog
+        cite_header = dialog.find("h5", string=re.compile("Cite this page", re.I))
+        if cite_header:
+            # Look for citation text in paragraphs
+            citation_paragraphs = dialog.find_all("p")
+            for p in citation_paragraphs:
+                text = p.get_text(strip=True)
+                if "Joseph Smith Papers" in text and "accessed" in text:
+                    # This is likely the full citation
+                    # JSP uses a single citation format, not Chicago/MLA/APA variants
+                    citations["chicago"] = text  # Default to Chicago style
+                    break
     
-    for format_name in formats:
-        # Find the format label
-        format_label = popup_container.find(string=re.compile(format_name))
-        if format_label:
-            # Look for the citation text nearby
-            # Citation text usually contains the document title and date pattern
-            parent = format_label.parent
-            if parent:
-                # Search in parent and siblings for citation text
-                citation_pattern = re.compile(r"[^.]+\d{4}[^.]*\.")  # Text with 4-digit year
+    # If no dialog citation found, try to construct from Next.js data
+    if not citations:
+        nextjs_data = soup.find("script", id="__NEXT_DATA__")
+        if nextjs_data:
+            try:
+                data = json.loads(nextjs_data.string)
+                page_props = data.get("props", {}).get("pageProps", {})
+                summary = page_props.get("summary", {})
                 
-                # Check next siblings
-                next_elem = parent.find_next_sibling()
-                if next_elem:
-                    text = next_elem.get_text(strip=True)
-                    if citation_pattern.search(text):
-                        citations[format_name.lower()] = text
-                        continue
+                # Get document series title
+                series_title = summary.get("documentSeriesTitle", "")
                 
-                # Check within parent's parent for citation divs
-                grandparent = parent.parent
-                if grandparent:
-                    cite_divs = grandparent.find_all("div", string=citation_pattern)
-                    for div in cite_divs:
-                        text = div.get_text(strip=True)
-                        # Make sure this is a citation and not just any text with a year
-                        if len(text) > 20 and not any(fmt in text for fmt in formats):
-                            citations[format_name.lower()] = text
-                            break
+                if series_title:
+                    # Extract page number from URL or page data
+                    page_num = None
+                    
+                    # Try to get from URL in metadata or passed URL
+                    page_url = url or page_props.get("url", "")
+                    if page_url:
+                        page_match = re.search(r'/(\d+)(?:#.*)?$', page_url)
+                        if page_match:
+                            page_num = page_match.group(1)
+                    
+                    # Get current date for access date
+                    from datetime import datetime
+                    # Format date without leading zero on day
+                    today = datetime.now()
+                    access_date = today.strftime("%B {day}, %Y").format(day=today.day)
+                    
+                    # Construct the citation
+                    if page_num:
+                        citation = f"{series_title}, p. {page_num}, The Joseph Smith Papers, accessed {access_date}, {page_url}"
+                    else:
+                        citation = f"{series_title}, The Joseph Smith Papers, accessed {access_date}, {page_url}"
+                    
+                    citations["chicago"] = citation
+                    
+            except Exception:
+                pass
     
     # If we found citations, create CitationInfo
     if citations:
@@ -169,10 +187,10 @@ def extract_metadata_from_nextjs(soup: BeautifulSoup) -> Optional[Dict[str, str]
         return None
 
 
-def extract_metadata_section(soup: BeautifulSoup) -> Optional[MetadataSection]:
+def extract_metadata_section(soup: BeautifulSoup, url: str = None) -> Optional[MetadataSection]:
     """Extract all metadata from the page."""
     # Extract citation info
-    citation_info = extract_citation_info(soup)
+    citation_info = extract_citation_info(soup, url)
     
     # Extract repository info
     repository_info = extract_repository_info(soup)

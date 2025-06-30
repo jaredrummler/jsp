@@ -379,7 +379,7 @@ def extract_sections(soup: BeautifulSoup, url: str = None, use_browser_for_trans
     except ImportError:
         from metadata_extractor import extract_metadata_section
     
-    metadata_section = extract_metadata_section(soup)
+    metadata_section = extract_metadata_section(soup, url)
     if metadata_section:
         sections.append(metadata_section)
 
