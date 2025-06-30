@@ -251,6 +251,76 @@ class DocumentInformation:
 
 
 @dataclass
+class TranscriptionLine:
+    """Represents a line in a transcription.
+
+    Attributes:
+        text: The line text
+        editorial_notes: List of editorial notes (popup references)
+        links: List of hyperlinks in this line
+    """
+
+    text: str
+    editorial_notes: List[PopupReference] = field(default_factory=list)
+    links: List[Link] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"text": self.text}
+        if self.editorial_notes:
+            result["editorial_notes"] = [n.to_dict() for n in self.editorial_notes]
+        if self.links:
+            result["links"] = [l.to_dict() for l in self.links]
+        return result
+
+
+@dataclass
+class TranscriptionParagraph:
+    """Represents a paragraph in a transcription that may contain line breaks.
+
+    Attributes:
+        lines: List of lines (separated by line breaks)
+        footnote: Optional footnote number
+    """
+
+    lines: List[TranscriptionLine]
+    footnote: Optional[int] = None
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"lines": [line.to_dict() for line in self.lines]}
+        if self.footnote is not None:
+            result["footnote"] = self.footnote
+        return result
+
+
+@dataclass
+class Transcription:
+    """Represents a document transcription with line breaks and editorial notes.
+
+    Attributes:
+        title: The transcription title
+        paragraphs: List of transcription paragraphs
+        footnotes: List of footnotes referenced in the transcription
+        paragraphs_clean: List of paragraphs with editing marks removed (optional)
+    """
+
+    title: str
+    paragraphs: List[TranscriptionParagraph]
+    footnotes: List[Footnote] = field(default_factory=list)
+    paragraphs_clean: Optional[List[TranscriptionParagraph]] = None
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"title": self.title, "paragraphs": [p.to_dict() for p in self.paragraphs]}
+        if self.footnotes:
+            result["footnotes"] = [f.to_dict() for f in self.footnotes]
+        if self.paragraphs_clean is not None:
+            result["paragraphs_clean"] = [p.to_dict() for p in self.paragraphs_clean]
+        return result
+
+
+@dataclass
 class PageContent:
     """Represents scraped page content.
 
@@ -265,7 +335,7 @@ class PageContent:
     breadcrumbs: List[Breadcrumb]
     title: Optional[str] = None
     content: Optional[str] = None
-    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation]] = field(default_factory=list)
+    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription]] = field(default_factory=list)
     metadata: Optional[dict] = None
 
     def to_dict(self) -> dict:
