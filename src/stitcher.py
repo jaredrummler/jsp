@@ -11,6 +11,13 @@ from .tile_manager import ProgressCallback, TileInfo
 
 logger = logging.getLogger(__name__)
 
+# Import AliveStitchProgressCallback if available
+try:
+    from .progress_utils import AliveStitchProgressCallback
+    ALIVE_PROGRESS_AVAILABLE = True
+except ImportError:
+    ALIVE_PROGRESS_AVAILABLE = False
+
 
 @dataclass
 class TileGroup:
@@ -261,7 +268,8 @@ class TileStitcher:
                 with Image.open(tile.path) as tile_img:
                     # Verify tile dimensions
                     if tile_img.size != (tile_group.tile_width, tile_group.tile_height):
-                        logger.warning(
+                        # Log at debug level instead of warning to reduce noise
+                        logger.debug(
                             f"Tile size mismatch at ({tile.col}, {tile.row}): "
                             f"expected {tile_group.tile_width}x{tile_group.tile_height}, "
                             f"got {tile_img.size[0]}x{tile_img.size[1]}"

@@ -11,6 +11,18 @@ from .tile_manager import QualityMode, SimpleProgressCallback, TileManager
 
 logger = logging.getLogger(__name__)
 
+# Import enhanced progress callbacks if available
+try:
+    from .progress_utils import (
+        AliveProgressCallback,
+        AliveStitchProgressCallback,
+        alive_progress_spinner,
+        show_progress_step,
+    )
+    ALIVE_PROGRESS_AVAILABLE = True
+except ImportError:
+    ALIVE_PROGRESS_AVAILABLE = False
+
 
 def download_image(
     url: str, output_dir: Path, quality: int = 95, timeout: int = 30
@@ -33,23 +45,32 @@ def download_image(
         logger.info(f"Starting high-quality image download from: {url}")
 
         # Step 1: Detect OpenSeadragon configuration
-        print("Detecting OpenSeadragon configuration...")
-        detector = OpenSeadragonDetector(use_selenium=True)
-        config = detector.detect(url)
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Detecting image viewer configuration") as bar:
+                detector = OpenSeadragonDetector(use_selenium=True)
+                config = detector.detect(url)
+        else:
+            detector = OpenSeadragonDetector(use_selenium=True)
+            config = detector.detect(url)
 
         if not config or not config.has_tiles:
             logger.error("No OpenSeadragon tiles found on the page")
-            print("Error: No high-resolution image tiles found on this page")
+            print("✗ No high-resolution image tiles found on this page")
             return None
 
         logger.info(f"Found {config.tile_source_count} tile source(s)")
 
         # Step 2: Download tiles
-        print("Downloading image tiles...")
+        if ALIVE_PROGRESS_AVAILABLE:
+            progress_callback = AliveProgressCallback("Downloading tiles")
+        else:
+            print("Downloading image tiles...")
+            progress_callback = SimpleProgressCallback()
+        
         tile_manager = TileManager(
             max_workers=5,
             timeout=timeout,
-            progress_callback=SimpleProgressCallback(),
+            progress_callback=progress_callback,
         )
 
         temp_dir = tile_manager.download_tiles(
@@ -58,8 +79,13 @@ def download_image(
         )
 
         # Step 3: Stitch tiles together
-        print("\nStitching tiles into complete image...")
-        stitcher = TileStitcher(progress_callback=StitchProgressCallback())
+        if ALIVE_PROGRESS_AVAILABLE:
+            stitch_callback = AliveStitchProgressCallback("Stitching tiles")
+        else:
+            print("\nStitching tiles into complete image...")
+            stitch_callback = StitchProgressCallback()
+        
+        stitcher = TileStitcher(progress_callback=stitch_callback)
 
         output_path = output_dir / "image.jpg"
         stitched_images = stitcher.stitch_tiles(
@@ -79,9 +105,9 @@ def download_image(
 
         # Log if multiple images were created
         if len(stitched_images) > 1:
-            print(f"\nNote: Found and stitched {len(stitched_images)} separate images:")
+            print(f"\n📸 Created {len(stitched_images)} images:")
             for i, img_path in enumerate(stitched_images, 1):
-                print(f"  {i}. {img_path.name}")
+                print(f"   {i}. {img_path.name}")
 
         return result_path
 

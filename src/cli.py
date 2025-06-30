@@ -91,15 +91,12 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
         click.echo(f"[DRY RUN] Output directory: {output_dir}")
         return
 
-    click.echo(f"Processing {url}...")
     if verbose or debug:
-        click.echo(f"Output directory: {output_dir}")
-        click.echo(f"Image quality: {cfg.get('image_quality')}")
-        click.echo(f"Timeout: {cfg.get('timeout')}s")
-        click.echo(f"Use browser: {cfg.get('use_browser')}")
+        click.echo(f"\n📁 Output: {output_dir}")
+        click.echo(f"⚙️  Quality: {cfg.get('image_quality')} | Timeout: {cfg.get('timeout')}s | Browser: {cfg.get('use_browser')}")
+        click.echo()
 
     # Download image
-    click.echo("Downloading high-resolution image...")
     try:
         image_path = download_image(
             url,
@@ -108,17 +105,16 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
             timeout=cfg.get("timeout"),
         )
         if image_path:
-            click.echo(f"✓ Image saved to: {image_path}")
+            click.echo(f"✅ Image: {image_path}")
         else:
-            click.echo("✗ Failed to download image")
+            click.echo("❌ Image download failed")
     except Exception as e:
         if debug:
-            click.echo(f"✗ Image download error: {e}", err=True)
+            click.echo(f"❌ Image error: {e}", err=True)
         else:
-            click.echo("✗ Failed to download image")
+            click.echo("❌ Image download failed")
 
     # Scrape content
-    click.echo("Scraping webpage content...")
     try:
         content_path = scrape_content(
             url,
@@ -127,14 +123,14 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
             timeout=cfg.get("timeout"),
         )
         if content_path:
-            click.echo(f"✓ Content saved to: {content_path}")
+            click.echo(f"✅ Content: {content_path}")
         else:
-            click.echo("✗ Failed to scrape content")
+            click.echo("❌ Content scraping failed")
     except Exception as e:
         if debug:
-            click.echo(f"✗ Content scraping error: {e}", err=True)
+            click.echo(f"❌ Content error: {e}", err=True)
         else:
-            click.echo("✗ Failed to scrape content")
+            click.echo("❌ Content scraping failed")
 
 
 @cli.command("download-image")
@@ -180,7 +176,6 @@ def download_image_cmd(url, output, quality, timeout, config, verbose, debug, dr
         click.echo(f"[DRY RUN] Output directory: {output_dir}")
         return
 
-    click.echo(f"Downloading image from {url}...")
     if verbose or debug:
         click.echo(f"Output directory: {output_dir}")
         click.echo(f"Image quality: {cfg.get('image_quality')}")
@@ -192,9 +187,7 @@ def download_image_cmd(url, output, quality, timeout, config, verbose, debug, dr
             quality=cfg.get("image_quality"),
             timeout=cfg.get("timeout"),
         )
-        if image_path:
-            click.echo(f"✓ Image saved to: {image_path}")
-        else:
+        if not image_path:
             click.echo("✗ Failed to download image")
             sys.exit(1)
     except Exception as e:
@@ -248,7 +241,6 @@ def scrape_content_cmd(url, output, timeout, no_browser, config, verbose, debug,
         click.echo(f"[DRY RUN] Output directory: {output_dir}")
         return
 
-    click.echo(f"Scraping content from {url}...")
     if verbose or debug:
         click.echo(f"Output directory: {output_dir}")
         click.echo(f"Use browser: {cfg.get('use_browser')}")
@@ -260,9 +252,7 @@ def scrape_content_cmd(url, output, timeout, no_browser, config, verbose, debug,
             use_browser_for_transcription=cfg.get("use_browser"),
             timeout=cfg.get("timeout"),
         )
-        if content_path:
-            click.echo(f"✓ Content saved to: {content_path}")
-        else:
+        if not content_path:
             click.echo("✗ Failed to scrape content")
             sys.exit(1)
     except Exception as e:
