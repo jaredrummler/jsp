@@ -65,11 +65,17 @@ def scrape_content(url: str, output_dir: Path, use_browser_for_transcription: bo
         # Extract breadcrumbs
         breadcrumbs = extract_breadcrumbs(soup)
 
-        # Extract page title
-        title = None
-        title_elem = soup.find("title")
-        if title_elem:
-            title = title_elem.get_text(strip=True)
+        # Extract page title - use H1 instead of <title>
+        try:
+            from .title_extractor import extract_title
+        except ImportError:
+            from title_extractor import extract_title
+        
+        title = extract_title(soup)
+        
+        # Add current page to breadcrumbs
+        if title:
+            breadcrumbs.append(Breadcrumb(label=title, url=url))
 
         # Extract sections (Source Note, etc.)
         sections = extract_sections(soup, url, use_browser_for_transcription)
