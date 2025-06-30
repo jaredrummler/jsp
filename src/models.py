@@ -341,6 +341,81 @@ class FootnotesSection:
 
 
 @dataclass
+class TableRow:
+    """Represents a row in a table.
+    
+    Attributes:
+        cells: List of cell contents as strings
+        is_header: Whether this row contains header cells
+    """
+    
+    cells: List[str]
+    is_header: bool = False
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "cells": self.cells,
+            "is_header": self.is_header
+        }
+
+
+@dataclass
+class Table:
+    """Represents a table with rows and optional caption.
+    
+    Attributes:
+        rows: List of table rows
+        caption: Optional table caption
+        column_count: Number of columns in the table
+    """
+    
+    rows: List[TableRow]
+    caption: Optional[str] = None
+    column_count: int = 0
+    
+    def __post_init__(self):
+        """Calculate column count if not provided."""
+        if not self.column_count and self.rows:
+            self.column_count = max(len(row.cells) for row in self.rows)
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {
+            "rows": [r.to_dict() for r in self.rows],
+            "column_count": self.column_count
+        }
+        if self.caption:
+            result["caption"] = self.caption
+        return result
+
+
+@dataclass
+class TableSection:
+    """Represents a section containing one or more tables.
+    
+    Attributes:
+        title: Section title (e.g., from preceding header)
+        tables: List of tables in this section
+        context: Optional context or description
+    """
+    
+    title: str
+    tables: List[Table]
+    context: Optional[str] = None
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {
+            "title": self.title,
+            "tables": [t.to_dict() for t in self.tables]
+        }
+        if self.context:
+            result["context"] = self.context
+        return result
+
+
+@dataclass
 class PageContent:
     """Represents scraped page content.
 
@@ -355,7 +430,7 @@ class PageContent:
     breadcrumbs: List[Breadcrumb]
     title: Optional[str] = None
     content: Optional[str] = None
-    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection]] = field(default_factory=list)
+    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection]] = field(default_factory=list)
     metadata: Optional[dict] = None
 
     def to_dict(self) -> dict:

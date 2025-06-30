@@ -364,6 +364,15 @@ def extract_sections(soup: BeautifulSoup, url: str = None, use_browser_for_trans
     if footnotes_section:
         sections.append(footnotes_section)
 
+    # Extract Tables
+    try:
+        from .table_extractor import extract_table_sections
+    except ImportError:
+        from table_extractor import extract_table_sections
+    
+    table_sections = extract_table_sections(soup)
+    sections.extend(table_sections)
+
     # Add more section extractors here as needed
     # e.g., Related Documents, etc.
 

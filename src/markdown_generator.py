@@ -15,6 +15,9 @@ try:
         PopupReference,
         Sentence,
         SourceNote,
+        Table,
+        TableRow,
+        TableSection,
         Transcription,
         TranscriptionLine,
         TranscriptionParagraph,
@@ -31,6 +34,9 @@ except ImportError:
         PopupReference,
         Sentence,
         SourceNote,
+        Table,
+        TableRow,
+        TableSection,
         Transcription,
         TranscriptionLine,
         TranscriptionParagraph,
@@ -285,6 +291,83 @@ def footnotes_section_to_markdown(footnotes_section: FootnotesSection) -> str:
     return "\n".join(md_lines)
 
 
+def table_to_markdown(table: Table) -> str:
+    """Convert a Table object to markdown format.
+    
+    Args:
+        table: The Table object to convert
+        
+    Returns:
+        Markdown formatted string
+    """
+    if not table.rows:
+        return ""
+    
+    md_lines = []
+    
+    # Add caption if present
+    if table.caption:
+        md_lines.append(f"*{table.caption}*")
+        md_lines.append("")
+    
+    # Determine if first row is header
+    has_header = table.rows[0].is_header if table.rows else False
+    
+    # Create the table
+    for i, row in enumerate(table.rows):
+        # Escape pipe characters in cell content
+        cells = [cell.replace("|", "\\|") for cell in row.cells]
+        
+        # Pad cells to ensure consistent column count
+        while len(cells) < table.column_count:
+            cells.append("")
+        
+        # Create row
+        row_text = "| " + " | ".join(cells) + " |"
+        md_lines.append(row_text)
+        
+        # Add separator after header row
+        if i == 0 and has_header:
+            separator = "|" + "|".join([" --- " for _ in range(table.column_count)]) + "|"
+            md_lines.append(separator)
+        elif i == 0 and not has_header:
+            # No header row, add separator after first row anyway for valid markdown
+            separator = "|" + "|".join([" --- " for _ in range(table.column_count)]) + "|"
+            md_lines.insert(1, separator)  # Insert after first row
+    
+    return "\n".join(md_lines)
+
+
+def table_section_to_markdown(table_section: TableSection) -> str:
+    """Convert a TableSection object to markdown format.
+    
+    Args:
+        table_section: The TableSection object to convert
+        
+    Returns:
+        Markdown formatted string
+    """
+    md_lines = []
+    
+    # Add section title
+    md_lines.append(f"## {table_section.title}")
+    md_lines.append("")
+    
+    # Add context if present
+    if table_section.context:
+        md_lines.append(table_section.context)
+        md_lines.append("")
+    
+    # Convert each table
+    for table in table_section.tables:
+        table_md = table_to_markdown(table)
+        if table_md:
+            md_lines.append(table_md)
+            md_lines.append("")  # Add space between tables
+    
+    return "\n".join(md_lines)
+
+
 def transcription_to_markdown(transcription: Transcription) -> str:
     """Convert a Transcription object to markdown format.
 
@@ -436,7 +519,7 @@ def generate_markdown_with_sections(
     breadcrumbs: List,
     title: str,
     content: str,
-    sections: List[Union[SourceNote, HistoricalIntroduction, DocumentInformation, Transcription]],
+    sections: List[Union[SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection]],
 ) -> str:
     """Generate complete markdown with breadcrumbs, content, and sections.
 
@@ -489,6 +572,9 @@ def generate_markdown_with_sections(
             md_lines.append("")
         elif isinstance(section, FootnotesSection):
             md_lines.append(footnotes_section_to_markdown(section))
+            md_lines.append("")
+        elif isinstance(section, TableSection):
+            md_lines.append(table_section_to_markdown(section))
             md_lines.append("")
 
     return "\n".join(md_lines)
