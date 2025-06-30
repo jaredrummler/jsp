@@ -1,14 +1,44 @@
 """Scrape webpage content from Joseph Smith Papers and convert to Markdown."""
 
+import json
 import re
+from datetime import datetime
 from pathlib import Path
+from typing import List, Optional
 
 import requests
 from bs4 import BeautifulSoup
 
+try:
+    from .models import (
+        Breadcrumb,
+        Footnote,
+        Link,
+        PageContent,
+        Paragraph,
+        Popup,
+        PopupReference,
+        Section,
+        Sentence,
+        SourceNote,
+    )
+except ImportError:
+    from models import (
+        Breadcrumb,
+        Footnote,
+        Link,
+        PageContent,
+        Paragraph,
+        Popup,
+        PopupReference,
+        Section,
+        Sentence,
+        SourceNote,
+    )
+
 
 def scrape_content(url: str, output_dir: Path) -> Path:
-    """Scrape content from the given URL and save as Markdown.
+    """Scrape content from the given URL and save as Markdown and JSON.
 
     Args:
         url: The Joseph Smith Papers URL to scrape
@@ -27,21 +57,247 @@ def scrape_content(url: str, output_dir: Path) -> Path:
         # Parse HTML
         soup = BeautifulSoup(response.text, "lxml")
 
+        # Extract breadcrumbs
+        breadcrumbs = extract_breadcrumbs(soup)
+
+        # Extract page title
+        title = None
+        title_elem = soup.find("title")
+        if title_elem:
+            title = title_elem.get_text(strip=True)
+
+        # Extract sections (Source Note, etc.)
+        sections = extract_sections(soup)
+
         # Extract content (placeholder implementation)
         content = extract_main_content(soup)
 
         # Convert to Markdown
         markdown = html_to_markdown(content)
 
+        # Create PageContent object
+        page_content = PageContent(
+            breadcrumbs=breadcrumbs,
+            title=title,
+            content=markdown,
+            sections=sections,
+            metadata={
+                "url": url,
+                "scraped_at": datetime.now().isoformat(),
+            },
+        )
+
+        # Save as JSON
+        json_path = output_dir / "content.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(page_content.to_dict(), f, indent=2, ensure_ascii=False)
+
+        # Generate markdown with sections
+        try:
+            from .markdown_generator import generate_markdown_with_sections
+        except ImportError:
+            from markdown_generator import generate_markdown_with_sections
+
+        markdown_with_sections = generate_markdown_with_sections(
+            breadcrumbs=breadcrumbs, title=title, content=markdown, sections=sections
+        )
+
         # Save to file
         output_path = output_dir / "content.md"
-        output_path.write_text(markdown, encoding="utf-8")
+        output_path.write_text(markdown_with_sections, encoding="utf-8")
 
         return output_path
 
     except Exception as e:
         print(f"Error scraping content: {e}")
         return None
+
+
+def extract_breadcrumbs(soup: BeautifulSoup) -> List[Breadcrumb]:
+    """Extract breadcrumb navigation from the page.
+
+    Args:
+        soup: BeautifulSoup parsed HTML
+
+    Returns:
+        List of Breadcrumb objects
+    """
+    breadcrumbs = []
+
+    # Look for breadcrumb container - JSP uses specific class names
+    # Try multiple possible selectors based on JSP's structure
+    breadcrumb_selectors = [
+        "ol.breadcrumbs",
+        'nav[aria-label="breadcrumb"] ol',
+        ".breadcrumbs ol",
+        '[data-testid="breadcrumbs"]',
+    ]
+
+    breadcrumb_list = None
+    for selector in breadcrumb_selectors:
+        breadcrumb_list = soup.select_one(selector)
+        if breadcrumb_list:
+            break
+
+    if not breadcrumb_list:
+        return breadcrumbs
+
+    # Extract each breadcrumb item
+    items = breadcrumb_list.find_all("li")
+    for item in items:
+        # Find the link within the item
+        link = item.find("a")
+        if link:
+            label = link.get_text(strip=True)
+            url = link.get("href")
+            # Convert relative URLs to absolute if needed
+            if url and not url.startswith("http"):
+                url = f"https://www.josephsmithpapers.org{url}"
+            breadcrumbs.append(Breadcrumb(label=label, url=url))
+        else:
+            # Last breadcrumb might not be a link
+            text = item.get_text(strip=True)
+            # Remove any separator characters like > or /
+            text = re.sub(r"[>\s/]+$", "", text).strip()
+            if text:
+                breadcrumbs.append(Breadcrumb(label=text, url=None))
+
+    return breadcrumbs
+
+
+def extract_source_note_simple(soup: BeautifulSoup) -> Optional[SourceNote]:
+    """Extract the Source Note section from the page.
+
+    Args:
+        soup: BeautifulSoup parsed HTML
+
+    Returns:
+        SourceNote object if found, None otherwise
+    """
+    # Look for the Source Note drawer/details element
+    source_note_selectors = [
+        'details[data-testid="drawer-SourceNote-drawer"]',
+        'details:has(h3:contains("Source Note"))',
+        '.StyledDrawer:has(h3:contains("Source Note"))',
+    ]
+
+    source_note_elem = None
+    for selector in source_note_selectors:
+        try:
+            source_note_elem = soup.select_one(selector)
+            if source_note_elem:
+                break
+        except:
+            # Some selectors might not be supported by BeautifulSoup
+            continue
+
+    if not source_note_elem:
+        # Try finding by text content
+        h3_tags = soup.find_all("h3")
+        for h3 in h3_tags:
+            if "Source Note" in h3.get_text(strip=True):
+                # Find the parent details element
+                parent = h3.parent
+                while parent and parent.name != "details":
+                    parent = parent.parent
+                if parent:
+                    source_note_elem = parent
+                    break
+
+    if not source_note_elem:
+        return None
+
+    # Extract the title
+    title = "Source Note"
+
+    # Find the content area
+    content_area = source_note_elem.find("div", class_="drawerContent")
+    if not content_area:
+        # Alternative selector
+        content_area = source_note_elem.find("div", id="source-note-wysiwyg")
+
+    if not content_area:
+        return None
+
+    # Extract summary (usually in a span with class 'source-note-summary')
+    summary = None
+    summary_elem = content_area.find("span", class_="source-note-summary")
+    if summary_elem:
+        summary = summary_elem.get_text(strip=True)
+
+    # Extract full content text
+    full_content_parts = []
+
+    # Get all text nodes, preserving structure
+    for elem in content_area.find_all(["div", "p"]):
+        if elem.get("class") and "wasptag" in elem.get("class", []):
+            text = elem.get_text(strip=True)
+            if text:
+                full_content_parts.append(text)
+
+    full_content = (
+        "\n\n".join(full_content_parts) if full_content_parts else content_area.get_text(strip=True)
+    )
+
+    # Extract footnotes
+    footnotes = []
+
+    # Look for footnote list at the bottom
+    footnote_list = content_area.find("ol", class_=re.compile("footnote|fZvPgu"))
+    if footnote_list:
+        for li in footnote_list.find_all("li"):
+            # Get footnote number
+            number_elem = li.find("a", class_=re.compile("footnote|gDRSro"))
+            if number_elem:
+                try:
+                    number = int(re.search(r"\d+", number_elem.get_text()).group())
+                except:
+                    continue
+
+                # Get footnote text
+                text_div = li.find("div", class_=re.compile("bUYXhV"))
+                if text_div:
+                    footnote_text = text_div.get_text(strip=True)
+                    footnote_id = number_elem.get("href", "").lstrip("#")
+                    footnotes.append(Footnote(number=number, text=footnote_text, id=footnote_id))
+
+    # Create SourceNote object
+    source_note = SourceNote(
+        title=title,
+        content=full_content,  # Use full_content as the main content
+        summary=summary,
+        full_content=full_content,
+        footnotes=footnotes,
+    )
+
+    return source_note
+
+
+def extract_sections(soup: BeautifulSoup) -> List[Section]:
+    """Extract all sections from the page.
+
+    Args:
+        soup: BeautifulSoup parsed HTML
+
+    Returns:
+        List of Section objects
+    """
+    sections = []
+
+    # Use the advanced source note extractor
+    try:
+        from .source_note_extractor import extract_source_note_advanced
+    except ImportError:
+        from source_note_extractor import extract_source_note_advanced
+
+    source_note = extract_source_note_advanced(soup)
+    if source_note:
+        sections.append(source_note)
+
+    # Add more section extractors here as needed
+    # e.g., Historical Introduction, Related Documents, etc.
+
+    return sections
 
 
 def extract_main_content(soup: BeautifulSoup) -> str:
