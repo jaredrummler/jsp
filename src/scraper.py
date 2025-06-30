@@ -354,6 +354,16 @@ def extract_sections(soup: BeautifulSoup, url: str = None, use_browser_for_trans
         if transcription:
             sections.append(transcription)
 
+    # Extract Footnotes section
+    try:
+        from .footnotes_extractor import extract_footnotes_section
+    except ImportError:
+        from footnotes_extractor import extract_footnotes_section
+    
+    footnotes_section = extract_footnotes_section(soup)
+    if footnotes_section:
+        sections.append(footnotes_section)
+
     # Add more section extractors here as needed
     # e.g., Related Documents, etc.
 
