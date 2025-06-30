@@ -164,8 +164,8 @@ def extract_paragraph_from_div(para_elem: Tag) -> Optional[Paragraph]:
                 links.append(Link(text=text, url=url))
                 link_elem.replace_with(f"[{text}]")
     
-    # Get the final text
-    text = para_copy.get_text(strip=True)
+    # Get the final text - use separator to preserve spaces between elements
+    text = para_copy.get_text(separator='', strip=False).strip()
     
     if text:
         # Create sentence object with all markup
