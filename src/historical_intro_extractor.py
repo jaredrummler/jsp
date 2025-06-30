@@ -214,6 +214,32 @@ def process_content_node(node: Union[Tag, NavigableString], in_popup: bool = Fal
             parts.append(f"[{link_text}]")
             return parts
 
+        # Handle editorial marks
+        if node.name == "span":
+            classes = node.get("class", [])
+            is_editorial = "editorial-comment" in classes
+            is_italic = "italic" in classes
+            
+            if is_editorial or is_italic:
+                content = node.get_text(strip=True)
+                if content:
+                    if is_editorial and is_italic:
+                        # Both editorial comment and italic
+                        parts.append(f"*[{content}]*")
+                    elif is_editorial:
+                        # Just editorial comment
+                        parts.append(f"[{content}]")
+                    elif is_italic:
+                        # Just italic
+                        parts.append(f"*{content}*")
+                    return parts
+        
+        # Handle static editorial notes
+        if node.name == "a" and "editorial-note-static" in node.get("class", []):
+            note_text = node.get_text(strip=True)
+            parts.append(f"^{note_text}^")
+            return parts
+
         # Process children
         for child in node.children:
             child_parts = process_content_node(child, in_popup)
