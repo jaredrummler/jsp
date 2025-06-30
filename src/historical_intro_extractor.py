@@ -276,10 +276,10 @@ def extract_footnotes(content_area: Tag) -> List[Footnote]:
                 links.append(Link(text=link_text, url=link_url))
 
         footnote = Footnote(
-            id=number,
+            number=number,
             text=text_content,
             links=links,
-            html_id=footnote_id if footnote_id else None
+            id=footnote_id if footnote_id else None
         )
         footnotes.append(footnote)
 

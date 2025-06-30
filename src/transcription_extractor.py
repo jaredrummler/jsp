@@ -225,7 +225,7 @@ def extract_transcription_paragraphs(transcript_div: Tag) -> Tuple[List[Transcri
     # Convert collected footnotes to Footnote objects
     footnotes = []
     for fn_num, fn_text in sorted(collected_footnotes.items()):
-        footnotes.append(Footnote(id=fn_num, text=fn_text))
+        footnotes.append(Footnote(number=fn_num, text=fn_text))
 
     return paragraphs, footnotes
 
@@ -282,7 +282,7 @@ def extract_footnotes_from_drawer(soup: BeautifulSoup) -> List[Footnote]:
         # Get HTML ID if available
         html_id = note_item.get("id")
 
-        footnote = Footnote(id=footnote_id, text=footnote_text, links=links, html_id=html_id)
+        footnote = Footnote(number=footnote_id, text=footnote_text, links=links, id=html_id)
         footnotes.append(footnote)
 
     return footnotes

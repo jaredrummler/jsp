@@ -252,10 +252,10 @@ def extract_source_note_advanced(soup: BeautifulSoup) -> Optional[SourceNote]:
                         if first_p:
                             text, links = parse_footnote_text(first_p)
                             footnote = Footnote(
-                                id=number,
+                                number=number,
                                 text=text,
                                 links=links,
-                                html_id=html_id if html_id else None,
+                                id=html_id if html_id else None,
                             )
                             footnotes.append(footnote)
                 except:
