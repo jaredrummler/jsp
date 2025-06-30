@@ -41,12 +41,13 @@ except ImportError:
     )
 
 
-def scrape_content(url: str, output_dir: Path) -> Path:
+def scrape_content(url: str, output_dir: Path, use_browser_for_transcription: bool = True) -> Path:
     """Scrape content from the given URL and save as Markdown and JSON.
 
     Args:
         url: The Joseph Smith Papers URL to scrape
         output_dir: Directory to save the content
+        use_browser_for_transcription: Whether to use browser automation for transcription extraction
 
     Returns:
         Path to the saved Markdown file, or None if scraping failed
@@ -71,7 +72,7 @@ def scrape_content(url: str, output_dir: Path) -> Path:
             title = title_elem.get_text(strip=True)
 
         # Extract sections (Source Note, etc.)
-        sections = extract_sections(soup)
+        sections = extract_sections(soup, url, use_browser_for_transcription)
 
         # Extract content (placeholder implementation)
         content = extract_main_content(soup)
@@ -277,11 +278,13 @@ def extract_source_note_simple(soup: BeautifulSoup) -> Optional[SourceNote]:
     return source_note
 
 
-def extract_sections(soup: BeautifulSoup) -> List[Section]:
+def extract_sections(soup: BeautifulSoup, url: str = None, use_browser_for_transcription: bool = True) -> List[Section]:
     """Extract all sections from the page.
 
     Args:
         soup: BeautifulSoup parsed HTML
+        url: The URL being scraped (needed for browser-based extraction)
+        use_browser_for_transcription: Whether to use browser automation for transcription
 
     Returns:
         List of Section objects
@@ -317,6 +320,28 @@ def extract_sections(soup: BeautifulSoup) -> List[Section]:
     doc_info = extract_document_information(soup)
     if doc_info:
         sections.append(doc_info)
+
+    # Extract Transcription
+    if use_browser_for_transcription and url:
+        # Use browser-based extraction for better handling of editing marks
+        try:
+            from .transcription_extractor_browser import extract_transcription_with_browser
+        except ImportError:
+            from transcription_extractor_browser import extract_transcription_with_browser
+        
+        transcription = extract_transcription_with_browser(url, headless=True)
+        if transcription:
+            sections.append(transcription)
+    else:
+        # Fall back to regular extraction
+        try:
+            from .transcription_extractor import extract_transcription
+        except ImportError:
+            from transcription_extractor import extract_transcription
+
+        transcription = extract_transcription(soup)
+        if transcription:
+            sections.append(transcription)
 
     # Add more section extractors here as needed
     # e.g., Related Documents, etc.
