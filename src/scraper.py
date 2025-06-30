@@ -41,13 +41,16 @@ except ImportError:
     )
 
 
-def scrape_content(url: str, output_dir: Path, use_browser_for_transcription: bool = True) -> Path:
+def scrape_content(
+    url: str, output_dir: Path, use_browser_for_transcription: bool = True, timeout: int = 30
+) -> Path:
     """Scrape content from the given URL and save as Markdown and JSON.
 
     Args:
         url: The Joseph Smith Papers URL to scrape
         output_dir: Directory to save the content
         use_browser_for_transcription: Whether to use browser automation for transcription extraction
+        timeout: Request timeout in seconds
 
     Returns:
         Path to the saved Markdown file, or None if scraping failed
@@ -55,7 +58,9 @@ def scrape_content(url: str, output_dir: Path, use_browser_for_transcription: bo
     try:
         # Fetch the webpage
         response = requests.get(
-            url, headers={"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0)"}
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0)"},
+            timeout=timeout,
         )
         response.raise_for_status()
 
