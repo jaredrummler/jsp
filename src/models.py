@@ -187,6 +187,70 @@ class SourceNote:
 
 
 @dataclass
+class HistoricalIntroduction:
+    """Represents a Historical Introduction section.
+
+    Attributes:
+        title: The main title or heading
+        paragraphs: List of paragraphs containing sentences
+        footnotes: List of footnotes referenced in the content
+    """
+
+    title: str
+    paragraphs: List[Paragraph]
+    footnotes: List[Footnote] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"title": self.title, "paragraphs": [p.to_dict() for p in self.paragraphs]}
+        if self.footnotes:
+            result["footnotes"] = [f.to_dict() for f in self.footnotes]
+        return result
+
+
+@dataclass
+class DocumentInfoItem:
+    """Represents a single label/value pair in Document Information.
+
+    Attributes:
+        label: The label/field name
+        value: The value text
+        link: Optional link if value contains a hyperlink
+    """
+
+    label: str
+    value: str
+    link: Optional[Link] = None
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"label": self.label, "value": self.value}
+        if self.link:
+            result["link"] = self.link.to_dict()
+        return result
+
+
+@dataclass
+class DocumentInformation:
+    """Represents the Document Information section.
+
+    Attributes:
+        title: Section title
+        items: List of label/value pairs
+    """
+
+    title: str
+    items: List[DocumentInfoItem]
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "title": self.title,
+            "items": [item.to_dict() for item in self.items]
+        }
+
+
+@dataclass
 class PageContent:
     """Represents scraped page content.
 
@@ -201,7 +265,7 @@ class PageContent:
     breadcrumbs: List[Breadcrumb]
     title: Optional[str] = None
     content: Optional[str] = None
-    sections: List[Union[Section, SourceNote]] = field(default_factory=list)
+    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation]] = field(default_factory=list)
     metadata: Optional[dict] = None
 
     def to_dict(self) -> dict:
