@@ -416,6 +416,90 @@ class TableSection:
 
 
 @dataclass
+class CitationInfo:
+    """Represents citation information in different formats.
+    
+    Attributes:
+        chicago: Chicago format citation
+        mla: MLA format citation
+        apa: APA format citation
+    """
+    
+    chicago: Optional[str] = None
+    mla: Optional[str] = None
+    apa: Optional[str] = None
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {}
+        if self.chicago:
+            result["chicago"] = self.chicago
+        if self.mla:
+            result["mla"] = self.mla
+        if self.apa:
+            result["apa"] = self.apa
+        return result
+
+
+@dataclass
+class RepositoryInfo:
+    """Represents repository/archive information.
+    
+    Attributes:
+        name: Repository name (e.g., "Church History Library")
+        collection: Collection name
+        location: Physical location
+        manuscript_number: Manuscript ID (e.g., "MS 1234")
+    """
+    
+    name: Optional[str] = None
+    collection: Optional[str] = None
+    location: Optional[str] = None
+    manuscript_number: Optional[str] = None
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {}
+        if self.name:
+            result["name"] = self.name
+        if self.collection:
+            result["collection"] = self.collection
+        if self.location:
+            result["location"] = self.location
+        if self.manuscript_number:
+            result["manuscript_number"] = self.manuscript_number
+        return result
+
+
+@dataclass
+class MetadataSection:
+    """Represents metadata information section.
+    
+    Attributes:
+        title: Section title
+        citation_info: Citation information in various formats
+        repository_info: Repository/archive information
+        additional_fields: Other metadata fields
+    """
+    
+    title: str
+    citation_info: Optional[CitationInfo] = None
+    repository_info: Optional[RepositoryInfo] = None
+    additional_fields: Dict[str, str] = field(default_factory=dict)
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {"title": self.title}
+        if self.citation_info:
+            result["citation_info"] = self.citation_info.to_dict()
+        if self.repository_info:
+            result["repository_info"] = self.repository_info.to_dict()
+        if self.additional_fields:
+            result["additional_fields"] = self.additional_fields
+        return result
+
+
+@dataclass
 class PageContent:
     """Represents scraped page content.
 
@@ -430,7 +514,7 @@ class PageContent:
     breadcrumbs: List[Breadcrumb]
     title: Optional[str] = None
     content: Optional[str] = None
-    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection]] = field(default_factory=list)
+    sections: List[Union[Section, SourceNote, HistoricalIntroduction, DocumentInformation, Transcription, FootnotesSection, TableSection, MetadataSection]] = field(default_factory=list)
     metadata: Optional[dict] = None
 
     def to_dict(self) -> dict:
