@@ -64,7 +64,7 @@ Every page has an integrated OpenSeadragon image viewer showing the document sca
 - Has zoom, pan, and navigation controls
 - Currently we download the image separately, but don't capture viewer metadata
 
-## 4. Editorial Marks and Annotations (MEDIUM PRIORITY)
+## 4. Editorial Marks and Annotations (MEDIUM PRIORITY) ✅ COMPLETED
 
 **Found in:** 8 pages
 
@@ -104,10 +104,13 @@ Additional metadata classes found that might contain useful information:
    - Added Table, TableRow, and TableSection models
    - Integrated into scraper and markdown generator
 
-3. **Enhance Editorial Marks Handling**
-   - Update existing extractors to recognize editorial classes
-   - Preserve editorial annotations inline
-   - Consider adding markers for different types
+3. **Enhance Editorial Marks Handling** ✅ COMPLETED
+   - Updated transcription_extractor.py to handle editorial marks
+   - Updated historical_intro_extractor.py to handle editorial marks
+   - Updated source_note_extractor.py to handle editorial marks
+   - Editorial comments rendered as [text] or *[text]* when both italic and editorial
+   - Italic text rendered as *text*
+   - Static editorial notes rendered as ^text^
 
 ### Phase 3 - Future Enhancements
 4. **Image Viewer Metadata**

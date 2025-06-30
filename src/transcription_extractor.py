@@ -124,6 +124,32 @@ def parse_line_content(elem) -> Tuple[TranscriptionLine, List[Tuple[int, str]]]:
             elif el.name == "span" and "line-break" in el.get("class", []):
                 # Skip line break markers - they should be handled at a higher level
                 pass
+            elif el.name == "span" and any(cls in el.get("class", []) for cls in ["editorial-comment", "italic"]):
+                # Handle editorial comments and italic text
+                classes = el.get("class", [])
+                is_editorial = "editorial-comment" in classes
+                is_italic = "italic" in classes
+                
+                # Extract the text content
+                content = el.get_text(strip=True)
+                
+                # Format based on type
+                if is_editorial and is_italic:
+                    # Both editorial comment and italic (common pattern)
+                    text_parts.append(f"*[{content}]*")
+                elif is_editorial:
+                    # Just editorial comment
+                    text_parts.append(f"[{content}]")
+                elif is_italic:
+                    # Just italic
+                    text_parts.append(f"*{content}*")
+                else:
+                    text_parts.append(content)
+            elif el.name == "a" and "editorial-note-static" in el.get("class", []):
+                # Handle static editorial notes (different from popup notes)
+                note_text = el.get_text(strip=True)
+                # These are typically superscript numbers or letters
+                text_parts.append(f"^{note_text}^")
             else:
                 # Process children
                 for child in el.children:

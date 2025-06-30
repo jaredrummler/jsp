@@ -159,6 +159,25 @@ def parse_paragraph_content(para_elem: Tag) -> Paragraph:
                     links.append(Link(text=text, url=url))
                     link_elem.replace_with(f"[{text}]")
 
+        # Handle editorial marks before final text extraction
+        for span in para_copy.find_all("span"):
+            classes = span.get("class", [])
+            is_editorial = "editorial-comment" in classes
+            is_italic = "italic" in classes
+            
+            if is_editorial or is_italic:
+                content = span.get_text(strip=True)
+                if content:
+                    if is_editorial and is_italic:
+                        # Both editorial comment and italic
+                        span.replace_with(f"*[{content}]*")
+                    elif is_editorial:
+                        # Just editorial comment
+                        span.replace_with(f"[{content}]")
+                    elif is_italic:
+                        # Just italic
+                        span.replace_with(f"*{content}*")
+
         # Get the modified text - use separator to preserve spaces between elements
         text = para_copy.get_text(separator='', strip=False).strip()
 
