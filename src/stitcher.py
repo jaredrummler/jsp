@@ -308,12 +308,22 @@ class TileStitcher:
             if ratio < 1:
                 preview_width = int(image.width * ratio)
                 preview_height = int(image.height * ratio)
-                preview = image.resize((preview_width, preview_height), Image.Resampling.LANCZOS)
+                
+                # Handle different PIL/Pillow versions
+                try:
+                    preview = image.resize((preview_width, preview_height), Image.Resampling.LANCZOS)
+                except AttributeError:
+                    # Fallback for older PIL versions
+                    preview = image.resize((preview_width, preview_height), Image.LANCZOS)
 
                 # Save preview
                 preview_path = (
                     output_path.parent / f"{output_path.stem}_preview{output_path.suffix}"
                 )
+                
+                # Ensure parent directory exists
+                preview_path.parent.mkdir(parents=True, exist_ok=True)
+                
                 if output_path.suffix.lower() == ".png":
                     preview.save(preview_path, "PNG", optimize=True)
                 else:

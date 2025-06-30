@@ -213,16 +213,35 @@ class TestTileStitcher:
     def test_create_preview(self, stitcher):
         """Test preview creation for large images."""
         with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            
             # Create a large test image
             large_img = Image.new("RGB", (3000, 3000), color=(100, 100, 100))
-            output_path = Path(temp_dir) / "large.jpg"
+            output_path = temp_path / "large.jpg"
+            
+            # Make sure the directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
             # First call to _create_preview should return the path and create the preview
             preview_path = stitcher._create_preview(large_img, output_path)
 
-            assert preview_path is not None
+            # If preview_path is None, let's check what went wrong
+            if preview_path is None:
+                # Check if it's because the image is small (it shouldn't be)
+                ratio = min(1200 / large_img.width, 1200 / large_img.height)
+                assert ratio < 1, f"Image should need preview: ratio={ratio}"
+                
+                # Try manually creating the preview to see if there's an error
+                preview_path_expected = output_path.parent / f"{output_path.stem}_preview{output_path.suffix}"
+                try:
+                    preview = large_img.resize((1200, 1200), Image.Resampling.LANCZOS)
+                    preview.save(preview_path_expected, "JPEG", quality=85, optimize=True)
+                except Exception as e:
+                    pytest.fail(f"Manual preview creation failed: {e}")
+
+            assert preview_path is not None, "Preview path should not be None for large image"
             assert preview_path.name == "large_preview.jpg"
-            assert preview_path.exists()
+            assert preview_path.exists(), f"Preview file should exist at {preview_path}"
 
             # Verify preview dimensions
             with Image.open(preview_path) as preview:
@@ -230,7 +249,7 @@ class TestTileStitcher:
 
             # Test that small images don't get previews
             small_img = Image.new("RGB", (500, 500), color=(100, 100, 100))
-            small_output_path = Path(temp_dir) / "small.jpg"
+            small_output_path = temp_path / "small.jpg"
             small_preview_path = stitcher._create_preview(small_img, small_output_path)
             assert small_preview_path is None
 
