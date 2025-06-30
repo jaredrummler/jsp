@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
+from .image_metadata import check_existing_image, save_image_metadata
 from .openseadragon import OpenSeadragonDetector
 from .stitcher import StitchProgressCallback, TileStitcher
 from .tile_manager import QualityMode, SimpleProgressCallback, TileManager
@@ -25,7 +26,11 @@ except ImportError:
 
 
 def download_image(
-    url: str, output_dir: Path, quality: int = 95, timeout: int = 30
+    url: str, 
+    output_dir: Path, 
+    quality: int = 95, 
+    timeout: int = 30,
+    force_download: bool = False,
 ) -> Optional[Path]:
     """Download high-resolution image from the given URL.
 
@@ -34,12 +39,27 @@ def download_image(
         output_dir: Directory to save the image
         quality: JPEG quality (1-100) for output image
         timeout: Request timeout in seconds
+        force_download: Force download even if cached image exists
 
     Returns:
         Path to the saved image, or None if download failed
     """
+    # Check for existing cached image
+    if not force_download:
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Checking for cached image"):
+                existing_image = check_existing_image(output_dir, url)
+        else:
+            existing_image = check_existing_image(output_dir, url)
+        
+        if existing_image:
+            logger.info(f"Using cached image: {existing_image}")
+            print("✓ Using cached image (already downloaded)")
+            return existing_image
+    
     temp_dir = None
     detector = None
+    config = None
 
     try:
         logger.info(f"Starting high-quality image download from: {url}")
@@ -103,6 +123,12 @@ def download_image(
         result_path = stitched_images[0]
         logger.info(f"Successfully created high-quality image: {result_path}")
 
+        # Save metadata for caching
+        try:
+            save_image_metadata(result_path, url, config)
+        except Exception as e:
+            logger.warning(f"Failed to save image metadata: {e}")
+
         # Log if multiple images were created
         if len(stitched_images) > 1:
             print(f"\n📸 Created {len(stitched_images)} images:")
@@ -129,14 +155,15 @@ def download_image(
                 logger.warning(f"Failed to clean up temp directory: {e}")
 
 
-def download_image_simple(url: str, output_dir: Path) -> Optional[Path]:
+def download_image_simple(url: str, output_dir: Path, force_download: bool = False) -> Optional[Path]:
     """Simple version of download_image without progress callbacks.
 
     Args:
         url: The Joseph Smith Papers URL containing the image
         output_dir: Directory to save the image
+        force_download: Force download even if cached image exists
 
     Returns:
         Path to the saved image, or None if download failed
     """
-    return download_image(url, output_dir, quality=100)
+    return download_image(url, output_dir, quality=100, force_download=force_download)

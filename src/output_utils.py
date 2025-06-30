@@ -170,12 +170,13 @@ def is_terminal_link_supported() -> bool:
     return False
 
 
-def show_output_summary(output_dir: Path, files_created: List[Tuple[str, Path]]) -> None:
+def show_output_summary(output_dir: Path, files_created: List[Tuple[str, Path]], cached_image: bool = False) -> None:
     """Show a summary of created files with pretty formatting.
 
     Args:
         output_dir: Base output directory
         files_created: List of (description, path) tuples
+        cached_image: Whether the image was loaded from cache
     """
     if not files_created:
         return
@@ -196,6 +197,11 @@ def show_output_summary(output_dir: Path, files_created: List[Tuple[str, Path]])
     tree = format_file_tree(output_dir, file_paths)
     for line in tree.split("\n"):
         print(f"   {line}")
+    
+    # Show cache status if applicable
+    if cached_image:
+        print("\n💾 Cache Status:")
+        print("   • Image loaded from cache (no download needed)")
 
     # Add quick open command for convenience
     print("\n💡 Quick actions:")

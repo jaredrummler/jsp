@@ -52,11 +52,12 @@ def cli(ctx):
 @click.option("--quality", type=int, help="JPEG quality (1-100, default: 95)")
 @click.option("--timeout", type=int, help="Request timeout in seconds (default: 30)")
 @click.option("--no-browser", is_flag=True, help="Disable browser automation for transcription")
+@click.option("--force-download", is_flag=True, help="Force re-download even if image is cached")
 @click.option("--config", type=click.Path(), help="Path to configuration file")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose output")
 @click.option("-vv", "--debug", is_flag=True, help="Enable debug output")
 @click.option("--dry-run", is_flag=True, help="Preview actions without executing")
-def process(url, output, quality, timeout, no_browser, config, verbose, debug, dry_run):
+def process(url, output, quality, timeout, no_browser, force_download, config, verbose, debug, dry_run):
     """Process URL by downloading image and scraping content."""
     # Validate URL
     if not validate_url(url):
@@ -101,19 +102,27 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
         )
         click.echo()
 
-    # Track created files
+    # Track created files and cache status
     files_created = []
+    image_was_cached = False
 
     # Download image
     try:
+        # Check if image exists before download attempt
+        from .image_metadata import check_existing_image
+        existing_image = check_existing_image(output_dir, url) if not force_download else None
+        
         image_path = download_image(
             url,
             output_dir,
             quality=cfg.get("image_quality"),
             timeout=cfg.get("timeout"),
+            force_download=force_download,
         )
         if image_path:
             files_created.append(("High-resolution image", image_path))
+            # Set cache status based on whether we had an existing image
+            image_was_cached = existing_image is not None
         else:
             click.echo("❌ Image download failed")
     except Exception as e:
@@ -146,7 +155,7 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
 
     # Show output summary
     if files_created:
-        show_output_summary(output_dir, files_created)
+        show_output_summary(output_dir, files_created, cached_image=image_was_cached)
 
 
 @cli.command("download-image")
@@ -154,11 +163,12 @@ def process(url, output, quality, timeout, no_browser, config, verbose, debug, d
 @click.option("--output", "-o", help="Output directory")
 @click.option("--quality", type=int, help="JPEG quality (1-100, default: 95)")
 @click.option("--timeout", type=int, help="Request timeout in seconds (default: 30)")
+@click.option("--force-download", is_flag=True, help="Force re-download even if image is cached")
 @click.option("--config", type=click.Path(), help="Path to configuration file")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose output")
 @click.option("-vv", "--debug", is_flag=True, help="Enable debug output")
 @click.option("--dry-run", is_flag=True, help="Preview actions without executing")
-def download_image_cmd(url, output, quality, timeout, config, verbose, debug, dry_run):
+def download_image_cmd(url, output, quality, timeout, force_download, config, verbose, debug, dry_run):
     """Download high-resolution image from the given URL."""
     # Validate URL
     if not validate_url(url):
@@ -197,11 +207,16 @@ def download_image_cmd(url, output, quality, timeout, config, verbose, debug, dr
         click.echo(f"Image quality: {cfg.get('image_quality')}")
 
     try:
+        # Check if image exists before download attempt
+        from .image_metadata import check_existing_image
+        existing_image = check_existing_image(output_dir, url) if not force_download else None
+        
         image_path = download_image(
             url,
             output_dir,
             quality=cfg.get("image_quality"),
             timeout=cfg.get("timeout"),
+            force_download=force_download,
         )
         if not image_path:
             click.echo("✗ Failed to download image")
@@ -209,7 +224,8 @@ def download_image_cmd(url, output, quality, timeout, config, verbose, debug, dr
 
         # Show output summary
         files_created = [("High-resolution image", image_path)]
-        show_output_summary(output_dir, files_created)
+        image_was_cached = existing_image is not None
+        show_output_summary(output_dir, files_created, cached_image=image_was_cached)
 
     except Exception as e:
         if debug:
