@@ -120,13 +120,18 @@ For automated publishing, the repository includes `.github/workflows/publish.yml
 
 ### Option 1: Trusted Publisher (Recommended)
 
-1. Go to https://pypi.org/manage/account/publishing/
-2. Add a new publisher with these settings:
+1. Create a GitHub environment (recommended):
+   - Go to repository Settings → Environments
+   - Create new environment: `pypi-publish`
+   - Add protection rules if desired
+
+2. Go to https://pypi.org/manage/account/publishing/
+3. Add a new publisher with these settings:
    - **GitHub Repository Owner**: `jaredrummler` (your username)
    - **GitHub Repository Name**: `jsp`
    - **Workflow name**: `publish.yml`
-   - **Environment name**: (leave blank)
-3. The workflow will automatically publish on release creation
+   - **Environment name**: `pypi-publish` (or leave blank)
+4. The workflow will automatically publish on release creation
 
 ### Option 2: API Token
 

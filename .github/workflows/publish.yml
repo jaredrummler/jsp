@@ -17,6 +17,7 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    environment: pypi-publish
     
     steps:
     - uses: actions/checkout@v4
