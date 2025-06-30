@@ -6,7 +6,7 @@ A command-line tool for Mormon enthusiasts and scholars to enhance their experie
 
 ## ✨ Features
 
-* **High-quality Image Retrieval**: Easily download and stitch high-resolution images from Joseph Smith Papers' OpenSeadragon viewer.
+* **High-quality Image Retrieval**: Easily download and stitch high-resolution images from Joseph Smith Papers' OpenSeadragon viewer at maximum quality (JPEG quality 100 by default).
 * **Content Scraping**: Extract webpage content into Markdown format for textual analysis, research, and AI integrations.
 
 ## 📌 Use Cases
@@ -49,7 +49,7 @@ For Windows users, manual installation instructions will be provided soon.
 ### Default command (runs all available tasks)
 
 ```bash
-jsp <URL>
+jsp process <URL>
 ```
 
 ### Individual commands
@@ -66,6 +66,25 @@ jsp download-image <URL>
 jsp scrape-content <URL>
 ```
 
+### Command Options
+
+```bash
+# Specify output directory
+jsp <URL> -o /path/to/output
+
+# Set JPEG quality (1-100, default: 100)
+jsp <URL> --quality 95
+
+# Disable browser automation for faster scraping
+jsp <URL> --no-browser
+
+# Enable verbose output
+jsp <URL> -v
+
+# Preview actions without executing
+jsp <URL> --dry-run
+```
+
 ### Output
 
 By default, outputs will be placed in the following directory:
@@ -76,7 +95,7 @@ output/{url-path}/
 └── content.md
 ```
 
-Custom output paths and filenames are supported and will be detailed in future updates.
+Use the `-o` or `--output` option to specify a custom output directory.
 
 ---
 

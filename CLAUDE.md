@@ -33,7 +33,7 @@ pytest tests                    # Run the complete test suite
 * **Default command (all tasks)**:
 
   ```bash
-  jsp <URL>
+  jsp process <URL>
   ```
 
 * **Download high-quality image**:
