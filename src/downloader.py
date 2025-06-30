@@ -12,13 +12,16 @@ from .tile_manager import QualityMode, SimpleProgressCallback, TileManager
 logger = logging.getLogger(__name__)
 
 
-def download_image(url: str, output_dir: Path, quality: int = 95) -> Optional[Path]:
+def download_image(
+    url: str, output_dir: Path, quality: int = 95, timeout: int = 30
+) -> Optional[Path]:
     """Download high-resolution image from the given URL.
 
     Args:
         url: The Joseph Smith Papers URL containing the image
         output_dir: Directory to save the image
         quality: JPEG quality (1-100) for output image
+        timeout: Request timeout in seconds
 
     Returns:
         Path to the saved image, or None if download failed
@@ -45,6 +48,7 @@ def download_image(url: str, output_dir: Path, quality: int = 95) -> Optional[Pa
         print("Downloading image tiles...")
         tile_manager = TileManager(
             max_workers=5,
+            timeout=timeout,
             progress_callback=SimpleProgressCallback(),
         )
 
@@ -109,4 +113,4 @@ def download_image_simple(url: str, output_dir: Path) -> Optional[Path]:
     Returns:
         Path to the saved image, or None if download failed
     """
-    return download_image(url, output_dir, quality=95)
+    return download_image(url, output_dir, quality=100)
