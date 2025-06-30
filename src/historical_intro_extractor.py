@@ -1,9 +1,13 @@
 """Extract Historical Introduction sections from Joseph Smith Papers pages."""
 
 import re
+import warnings
 from typing import List, Optional, Tuple, Union
 
 from bs4 import BeautifulSoup, NavigableString, Tag
+
+# Suppress the BeautifulSoup ':contains' deprecation warning
+warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated")
 
 try:
     from .models import Footnote, HistoricalIntroduction, Link, Paragraph, Popup, PopupReference, Sentence

@@ -1,9 +1,13 @@
 """Extract Footnotes section from Joseph Smith Papers pages."""
 
 import re
+import warnings
 from typing import List, Optional, Tuple
 
 from bs4 import BeautifulSoup, NavigableString, Tag
+
+# Suppress the BeautifulSoup ':contains' deprecation warning
+warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated")
 
 try:
     from .models import Footnote, FootnotesSection, Link

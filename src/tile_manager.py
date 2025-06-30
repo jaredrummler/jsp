@@ -17,6 +17,13 @@ from .openseadragon import OpenSeadragonConfig
 
 logger = logging.getLogger(__name__)
 
+# Import AliveProgressCallback if available
+try:
+    from .progress_utils import AliveProgressCallback
+    ALIVE_PROGRESS_AVAILABLE = True
+except ImportError:
+    ALIVE_PROGRESS_AVAILABLE = False
+
 
 class QualityMode(Enum):
     """Tile download quality modes."""
@@ -149,7 +156,12 @@ class TileManager:
 
         try:
             # Get tiles to download based on quality mode
-            tiles_to_download = self._get_tiles_to_download(config, quality_mode, specific_level)
+            try:
+                from .progress_utils import alive_progress_spinner
+                with alive_progress_spinner("Analyzing tile structure"):
+                    tiles_to_download = self._get_tiles_to_download(config, quality_mode, specific_level)
+            except ImportError:
+                tiles_to_download = self._get_tiles_to_download(config, quality_mode, specific_level)
 
             if not tiles_to_download:
                 raise TileDownloadError("No tiles found to download")

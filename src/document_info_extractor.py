@@ -1,8 +1,12 @@
 """Extract Document Information sections from Joseph Smith Papers pages."""
 
+import warnings
 from typing import List, Optional
 
 from bs4 import BeautifulSoup, Tag
+
+# Suppress the BeautifulSoup ':contains' deprecation warning
+warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated")
 
 try:
     from .models import DocumentInfoItem, DocumentInformation, Link

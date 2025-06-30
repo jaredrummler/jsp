@@ -2,12 +2,23 @@
 
 import json
 import re
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
 import requests
 from bs4 import BeautifulSoup
+
+# Suppress the BeautifulSoup ':contains' deprecation warning
+warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated")
+
+# Import progress utilities if available
+try:
+    from .progress_utils import alive_progress_spinner, show_progress_step
+    ALIVE_PROGRESS_AVAILABLE = True
+except ImportError:
+    ALIVE_PROGRESS_AVAILABLE = False
 
 try:
     from .models import (
@@ -57,15 +68,28 @@ def scrape_content(
     """
     try:
         # Fetch the webpage
-        response = requests.get(
-            url,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0)"},
-            timeout=timeout,
-        )
-        response.raise_for_status()
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Fetching webpage"):
+                response = requests.get(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0)"},
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+        else:
+            response = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; JSP-CLI/1.0)"},
+                timeout=timeout,
+            )
+            response.raise_for_status()
 
         # Parse HTML
-        soup = BeautifulSoup(response.text, "lxml")
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Parsing HTML"):
+                soup = BeautifulSoup(response.text, "lxml")
+        else:
+            soup = BeautifulSoup(response.text, "lxml")
 
         # Extract breadcrumbs
         breadcrumbs = extract_breadcrumbs(soup)
@@ -83,13 +107,25 @@ def scrape_content(
             breadcrumbs.append(Breadcrumb(label=title, url=url))
 
         # Extract sections (Source Note, etc.)
-        sections = extract_sections(soup, url, use_browser_for_transcription)
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Extracting sections"):
+                sections = extract_sections(soup, url, use_browser_for_transcription)
+        else:
+            sections = extract_sections(soup, url, use_browser_for_transcription)
 
         # Extract content (placeholder implementation)
-        content = extract_main_content(soup)
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Extracting content"):
+                content = extract_main_content(soup)
+        else:
+            content = extract_main_content(soup)
 
         # Convert to Markdown
-        markdown = html_to_markdown(content)
+        if ALIVE_PROGRESS_AVAILABLE:
+            with alive_progress_spinner("Converting to Markdown"):
+                markdown = html_to_markdown(content)
+        else:
+            markdown = html_to_markdown(content)
 
         # Create PageContent object
         page_content = PageContent(

@@ -1,9 +1,13 @@
 """Advanced source note extraction for JSP pages."""
 
 import re
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 from bs4 import BeautifulSoup, NavigableString, Tag
+
+# Suppress the BeautifulSoup ':contains' deprecation warning
+warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated")
 
 try:
     from .models import Footnote, Link, Paragraph, Popup, PopupReference, Sentence, SourceNote
