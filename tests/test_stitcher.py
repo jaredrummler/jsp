@@ -217,19 +217,22 @@ class TestTileStitcher:
             large_img = Image.new("RGB", (3000, 3000), color=(100, 100, 100))
             output_path = Path(temp_dir) / "large.jpg"
 
+            # First call to _create_preview should return the path and create the preview
             preview_path = stitcher._create_preview(large_img, output_path)
 
             assert preview_path is not None
             assert preview_path.name == "large_preview.jpg"
-
-            # Save and check preview was created
-            large_img.save(output_path)
-            preview_path_actual = stitcher._create_preview(large_img, output_path)
-            assert preview_path_actual.exists()
+            assert preview_path.exists()
 
             # Verify preview dimensions
-            with Image.open(preview_path_actual) as preview:
+            with Image.open(preview_path) as preview:
                 assert max(preview.size) == 1200
+
+            # Test that small images don't get previews
+            small_img = Image.new("RGB", (500, 500), color=(100, 100, 100))
+            small_output_path = Path(temp_dir) / "small.jpg"
+            small_preview_path = stitcher._create_preview(small_img, small_output_path)
+            assert small_preview_path is None
 
 
 class TestStitchProgressCallback:
