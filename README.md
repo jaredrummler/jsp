@@ -32,7 +32,7 @@ A command-line tool for Mormon enthusiasts and scholars to enhance their experie
 ### Using pip (Recommended)
 
 ```bash
-pip install jsp
+pip install jsp-papers
 ```
 
 ### Manual Installation

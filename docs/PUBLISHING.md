@@ -1,6 +1,6 @@
 # Publishing JSP to PyPI
 
-This guide explains how to publish the `jsp` package to PyPI.
+This guide explains how to publish the `jsp-papers` package to PyPI.
 
 ## Prerequisites
 
@@ -65,7 +65,7 @@ python scripts/publish.py --test
 
 Test the installation:
 ```bash
-pip install -i https://test.pypi.org/simple/ jsp
+pip install -i https://test.pypi.org/simple/ jsp-papers
 ```
 
 ### 2. Publish to PyPI
@@ -86,7 +86,7 @@ python scripts/publish.py
 ### 3. Verify Installation
 
 ```bash
-pip install jsp
+pip install jsp-papers
 jsp --version
 ```
 

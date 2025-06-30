@@ -9,7 +9,7 @@ readme_path = Path(__file__).parent / "README.md"
 long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
 setup(
-    name="jsp",
+    name="jsp-papers",
     version="1.0.0",
     author="Jared Rummler",
     author_email="jared@jaredrummler.com",
