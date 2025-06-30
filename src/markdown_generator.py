@@ -7,6 +7,7 @@ try:
     from .models import (
         DocumentInformation,
         Footnote,
+        FootnotesSection,
         HistoricalIntroduction,
         Link,
         Paragraph,
@@ -22,6 +23,7 @@ except ImportError:
     from models import (
         DocumentInformation,
         Footnote,
+        FootnotesSection,
         HistoricalIntroduction,
         Link,
         Paragraph,
@@ -248,6 +250,41 @@ def document_information_to_markdown(doc_info: DocumentInformation) -> str:
     return "\n".join(md_lines)
 
 
+def footnotes_section_to_markdown(footnotes_section: FootnotesSection) -> str:
+    """Convert a FootnotesSection object to markdown format.
+    
+    Args:
+        footnotes_section: The FootnotesSection object to convert
+        
+    Returns:
+        Markdown formatted string
+    """
+    md_lines = []
+    
+    # Add title
+    md_lines.append(f"## {footnotes_section.title}")
+    md_lines.append("")
+    
+    # Add each footnote
+    for footnote in footnotes_section.footnotes:
+        # Format as [number]. text
+        footnote_text = f"[{footnote.number}]. {footnote.text}"
+        
+        # Add links if present
+        if footnote.links:
+            for link in footnote.links:
+                # Replace link text with markdown link
+                footnote_text = footnote_text.replace(
+                    link.text, 
+                    f"[{link.text}]({link.url})"
+                )
+        
+        md_lines.append(footnote_text)
+        md_lines.append("")
+    
+    return "\n".join(md_lines)
+
+
 def transcription_to_markdown(transcription: Transcription) -> str:
     """Convert a Transcription object to markdown format.
 
@@ -449,6 +486,9 @@ def generate_markdown_with_sections(
             md_lines.append("")
         elif isinstance(section, Transcription):
             md_lines.append(transcription_to_markdown(section))
+            md_lines.append("")
+        elif isinstance(section, FootnotesSection):
+            md_lines.append(footnotes_section_to_markdown(section))
             md_lines.append("")
 
     return "\n".join(md_lines)
