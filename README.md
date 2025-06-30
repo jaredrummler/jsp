@@ -7,7 +7,17 @@ A command-line tool for Mormon enthusiasts and scholars to enhance their experie
 ## ✨ Features
 
 * **High-quality Image Retrieval**: Easily download and stitch high-resolution images from Joseph Smith Papers' OpenSeadragon viewer at maximum quality (JPEG quality 100 by default).
-* **Content Scraping**: Extract webpage content into Markdown format for textual analysis, research, and AI integrations.
+* **Advanced Content Extraction**: Extract structured webpage content into Markdown format, including:
+  - Document transcriptions with optional editing marks removal
+  - Source notes and historical introductions
+  - Document information and metadata
+  - Footnotes with proper formatting
+  - Tables with markdown conversion
+  - Editorial marks and annotations
+  - Citation information (Chicago, MLA, APA formats)
+  - Repository and archive information
+* **Configuration Support**: Use JSON configuration files for consistent settings across multiple runs.
+* **Browser Automation**: Optional browser-based extraction for accurate transcription rendering.
 
 ## 📌 Use Cases
 
@@ -70,19 +80,40 @@ jsp scrape-content <URL>
 
 ```bash
 # Specify output directory
-jsp <URL> -o /path/to/output
+jsp process <URL> -o /path/to/output
 
 # Set JPEG quality (1-100, default: 100)
-jsp <URL> --quality 95
+jsp download-image <URL> --quality 95
 
 # Disable browser automation for faster scraping
-jsp <URL> --no-browser
+jsp scrape-content <URL> --no-browser
 
 # Enable verbose output
-jsp <URL> -v
+jsp process <URL> -v
 
 # Preview actions without executing
-jsp <URL> --dry-run
+jsp process <URL> --dry-run
+
+# Use configuration file
+jsp process <URL> --config config.json
+
+# Set custom timeout (in seconds)
+jsp process <URL> --timeout 60
+```
+
+### Configuration File
+
+Create a `config.json` file to set default options:
+
+```json
+{
+  "output_dir": "output",
+  "image_quality": 100,
+  "timeout": 30,
+  "use_browser": true,
+  "verbose": false,
+  "debug": false
+}
 ```
 
 ### Output
@@ -91,9 +122,21 @@ By default, outputs will be placed in the following directory:
 
 ```
 output/{url-path}/
-├── image.jpg
-└── content.md
+├── image.jpg        # High-resolution stitched image
+├── content.md       # Extracted content in Markdown format
+└── content.json     # Structured data in JSON format
 ```
+
+The Markdown file includes all extracted sections:
+- Document breadcrumbs and navigation
+- Main content
+- Source notes with footnotes
+- Historical introductions
+- Document information
+- Full transcription (with optional editing marks)
+- Footnotes section
+- Tables (if present)
+- Metadata (citations and repository info)
 
 Use the `-o` or `--output` option to specify a custom output directory.
 

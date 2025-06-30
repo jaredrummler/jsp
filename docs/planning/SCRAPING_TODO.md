@@ -79,16 +79,59 @@ These appear to be inline annotations that provide context or corrections.
 
 While not explicitly found in the analyzed pages, the presence of reference links suggests there may be related document sections on some pages.
 
-## 6. Metadata Fields (LOW PRIORITY)
+## 6. Metadata Fields (LOW PRIORITY) ✅ COMPLETED
 
 Additional metadata classes found that might contain useful information:
-- Citation information
-- Publication details
-- Archive references
+- Citation information ✅ COMPLETED
+- Publication details ✅ COMPLETED
+- Archive references ✅ COMPLETED
+
+**Implementation:**
+- Created `metadata_extractor.py`
+- Extracts citation information from Next.js data when dialog not available
+- Extracts repository information from Document Information section
+- Supports Chicago, MLA, and APA citation formats
+- Added CitationInfo, RepositoryInfo, and MetadataSection models
+- Integrated into scraper and markdown generator
+
+## Implementation Status
+
+### Completed Items ✅
+
+1. **Footnotes Section (HIGH PRIORITY)** - COMPLETED
+   - Created footnotes_extractor.py
+   - Added FootnotesSection model
+   - Integrated with scraper and markdown generator
+
+2. **Table Extraction (MEDIUM PRIORITY)** - COMPLETED
+   - Created table_extractor.py
+   - Added Table, TableRow, and TableSection models
+   - Searches drawer sections and wysiwyg content areas
+   - Converts to markdown table format
+
+3. **Editorial Marks and Annotations (MEDIUM PRIORITY)** - COMPLETED
+   - Updated all text extractors to handle editorial marks
+   - Preserves italic, editorial-comment, and editorial-note-static classes
+   - Proper markdown formatting for each type
+
+4. **Metadata Fields (LOW PRIORITY)** - COMPLETED
+   - Created metadata_extractor.py
+   - Extracts citations from Next.js data structure
+   - Extracts repository information
+   - Added CitationInfo, RepositoryInfo, and MetadataSection models
+
+### Remaining Items ❌
+
+5. **Image Viewer Integration (LOW PRIORITY)** - NOT STARTED
+   - Extract image metadata from viewer
+   - Capture available resolutions
+   - Note any image annotations
+
+6. **Related Documents/Cross-References (FUTURE)** - NOT STARTED
+   - Identify and extract related document links
+   - Create a "Related Documents" section if found
 
 ## Recommendations
-
-### Phase 1 - High Priority
 1. **Add Footnotes Section Extractor** ✅ COMPLETED
    - Created `footnotes_extractor.py`
    - Extracts footnotes as a separate section
@@ -112,15 +155,27 @@ Additional metadata classes found that might contain useful information:
    - Italic text rendered as *text*
    - Static editorial notes rendered as ^text^
 
-### Phase 3 - Future Enhancements
-4. **Image Viewer Metadata**
+### Future Enhancements
+1. **Image Viewer Metadata** (LOW PRIORITY)
    - Extract image metadata from viewer
    - Capture available resolutions
    - Note any image annotations
 
-5. **Cross-Reference Links**
+2. **Cross-Reference Links** (FUTURE)
    - Identify and extract related document links
    - Create a "Related Documents" section if found
+
+3. **Clean Transcription Mode** (MEDIUM PRIORITY)
+   - Add CLI option to remove editorial marks from output
+   - Provide clean text version for research purposes
+
+4. **Batch Processing** (MEDIUM PRIORITY)
+   - Support processing multiple URLs from a file
+   - Add progress tracking for batch operations
+
+5. **Caching System** (LOW PRIORITY)
+   - Cache extracted content to avoid re-processing
+   - Add cache invalidation options
 
 ## Technical Notes
 
